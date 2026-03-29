@@ -4,16 +4,16 @@
     "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH"]
   },
   "presets": [
-    { "pgm": "1-1", "label": "CLN CMP", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 1 },
-    { "pgm": "1-2", "label": "CLN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 2 },
-    { "pgm": "1-4", "label": "UCLN", "effectBtns": [ "PRE-Booster", "E2", "E4", "E4" ], "favorite": 3 },
-    { "pgm": "1-5", "label": "CRN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 4 },
+    { "pgm": "1-1", "title": "CLN CMP", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 1 },
+    { "pgm": "1-2", "title": "CLN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 2 },
+    { "pgm": "1-4", "title": "UCLN", "effectBtns": [ "PRE-Booster", "E2", "E4", "E4" ], "favorite": 3 },
+    { "pgm": "1-5", "title": "CRN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ], "favorite": 4 },
 
-    { "pgm": "2-1", "label": "Let me love you", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "2-2", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "2-3", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "2-4", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "2-5", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] }
+    { "pgm": "2-1", "title": "Let me love you", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "2-2", "title": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "2-3", "title": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "2-4", "title": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "2-5", "title": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] }
   ],
   "songs": [
     { "title": "Love Foolosophy", "preset": "1-1" },
