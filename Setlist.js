@@ -188,15 +188,15 @@
     midiOut.send([status, prog & 0x7F], whenMs ? performance.now() + whenMs : undefined);
   }
 
-  function calculateProgramValue(programInput) {
-    const programStr = String(programInput);
-    if (programStr.includes('-')) {
-      const parts = programStr.split('-');
+  function calculateMidiPatch(presetValue) {
+    const presetStr = String(presetValue);
+    if (presetStr.includes('-')) {
+      const parts = presetStr.split('-');
       const before = parseInt(parts[0], 10);
       const after = parseInt(parts[1], 10);
       return (before-1) * 5 + after;
     }
-    return parseInt(programStr, 10);
+    return parseInt(presetStr, 10);
   }
 
   function toPatch(song, idx) {
@@ -204,8 +204,8 @@
     const useBank = true;
     const oneBased = true;
     const ch = (song.channel >= 1 && song.channel <= 16) ? song.channel : 1;
-    const programValue = calculateProgramValue(song.program);
-    const prog0 = oneBased ? Math.max(0, Math.min(127, programValue - 1)) : Math.max(0, Math.min(127, programValue));
+    const midiPatch = calculateMidiPatch(song.preset);
+    const prog0 = oneBased ? Math.max(0, Math.min(127, midiPatch - 1)) : Math.max(0, Math.min(127, midiPatch));
     console.info(`useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0}`);
     let t = 0;
     if (useBank) {
@@ -241,7 +241,7 @@
       row.className = 'song';
       row.dataset.idx = String(songs.indexOf(s));
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${s.program}</div><div class="title">${s.title}</div>`;
+      info.innerHTML = `<div class='preset'>${s.preset}</div><div class="title">${s.title}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });
