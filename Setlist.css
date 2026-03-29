@@ -83,7 +83,7 @@ button.primary {
   border-color: #2f4370;
 }
 
-button.direct {
+button.directBtn {
   background: linear-gradient(180deg, var(--btn-hi), var(--btn));
   border-color: #2f4370;
   padding: 2px;
@@ -92,7 +92,7 @@ button.direct {
   font-size: 20px
 }
 
-button.solo {
+button.soloBtn {
   background: linear-gradient(180deg, var(--btn-solo), var(--btn));
   border-color: #632f70;
   padding: 18px;
