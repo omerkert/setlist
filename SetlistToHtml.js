@@ -51,7 +51,7 @@ ${setlistData.songs.map(song => {
 </html>`;
 
 // Write to HTML file
-const outputPath = path.join(__dirname, 'Setlist.html');
+const outputPath = path.join(__dirname, 'Setlist-Rendered.html');
 fs.writeFileSync(outputPath, htmlContent, 'utf8');
 
 console.log(`HTML file created: ${outputPath}`);
