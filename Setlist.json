@@ -30,6 +30,18 @@
     { "pgm": "5-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "5-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
+    { "pgm": "9-1", "label": "Morg RCA35 Cleaner", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "9-2", "label": "Morg RCA35 Clean", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "9-3", "label": "3P Black Cln", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "9-4", "label": "Match Lite", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "9-5", "label": "Match Mid OD", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+
+    { "pgm": "10-1", "label": "72 Marshal 1 2", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "10-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "10-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "10-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "10-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    
     { "pgm": "11-1", "label": "CLN CMP", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
     { "pgm": "11-2", "label": "CLN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
     { "pgm": "11-3", "label": "SOLO", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },

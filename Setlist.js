@@ -293,6 +293,7 @@
   }
 
   async function enableMIDI() {
+    console.info
     if (!('requestMIDIAccess' in navigator)) {
       setOutStatus('MIDI UNSUPPORTED', 'err');
       alert('This browser does not support Web MIDI. Use Chrome or Edge on desktop/tablet.');
@@ -576,6 +577,32 @@
     if (e.key === 'Escape' && document.body.classList.contains('performance')) {
       // keep performance mode but allow escape to close fullscreen
       if (document.fullscreenElement) e.stopPropagation();
+    }
+  });
+
+  // Keyboard navigation for presets (only in preset mode)
+  document.addEventListener('keydown', (e) => {
+    if (displayMode === 'preset' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const presets = getPresetsForBank(currentPresetBank);
+      const maxIndex = presets.length - 1;
+      let newIndex = currentPresetIndex;
+      if (e.key === 'ArrowUp' && currentPresetIndex > 0) {
+        newIndex = currentPresetIndex - 1;
+      } else if (e.key === 'ArrowDown' && currentPresetIndex < maxIndex) {
+        newIndex = currentPresetIndex + 1;
+      }
+      if (newIndex !== currentPresetIndex) {
+        currentPresetIndex = newIndex;
+        const preset = presets[currentPresetIndex];
+        if (preset) {
+          const midiPatch = calculateMidiPatch(preset.pgm);
+          const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
+          sendPC(1, prog0, 0);
+        }
+        renderPresets();
+      }
     }
   });
 
