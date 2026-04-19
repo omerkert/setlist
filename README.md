@@ -44,3 +44,10 @@
     + install+run loopMIDI to create a loop-back-port
     + install+run MIDIberry and send input from "FootCtrl (Bluetooth MIDI IN)" to "loopMIDI Port [1]"
     + https://www.tobias-erichsen.de/wp-content/uploads/2020/01/loopMIDISetup_1_0_16_27.zip
+
+# Prevent WINDOWS from putting USB ports to sleep mode
+
+* Open Device Manager
+* Find Universal Serial Bus controllers
+* Right-click your USB Root Hubs > Properties > Power Management
+* Uncheck "Allow the computer to turn off this device to save power."

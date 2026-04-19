@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kemper Rig Monitor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e5e5e5; padding: 2rem; min-height: 100vh; }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    button { background: #1e1e1e; border: 0.5px solid #444; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; color: #e5e5e5; font-family: inherit; }
+    button:hover { background: #2a2a2a; }
+    button:disabled { opacity: 0.35; cursor: default; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; background: #444; }
+    .dot.ok { background: #22c55e; } .dot.err { background: #ef4444; } .dot.pulse { animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+    .status { font-size: 13px; color: #777; display: flex; align-items: center; }
+
+    /* rig display */
+    .rig-card { background: #161616; border: 0.5px solid #2a2a2a; border-radius: 14px; padding: 2rem; margin-bottom: 1.5rem; text-align: center; position: relative; overflow: hidden; }
+    .rig-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #444; margin-bottom: 12px; }
+    .rig-name { font-size: 32px; font-weight: 500; color: #f0f0f0; min-height: 40px; transition: color 0.2s; }
+    .rig-name.changed { color: #a855f7; }
+    .rig-name.dim { color: #333; font-size: 18px; font-weight: 400; padding-top: 8px; }
+    .rig-flash { position: absolute; inset: 0; background: #a855f720; opacity: 0; transition: opacity 0.1s; border-radius: 14px; pointer-events: none; }
+    .rig-flash.show { opacity: 1; }
+    .rig-prev { font-size: 13px; color: #444; margin-top: 10px; min-height: 20px; font-style: italic; }
+
+    /* controls */
+    .poll-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .poll-row label { font-size: 13px; color: #666; }
+    select { background: #1e1e1e; border: 0.5px solid #444; border-radius: 8px; padding: 7px 12px; font-size: 13px; color: #e5e5e5; font-family: inherit; cursor: pointer; }
+
+    /* metrics */
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .metric { background: #1a1a1a; border-radius: 8px; padding: 10px 14px; }
+    .metric-label { font-size: 11px; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric-value { font-size: 18px; font-weight: 500; font-family: monospace; color: #f0f0f0; }
+
+    /* history */
+    .section-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #444; margin: 0 0 8px; }
+    .history-wrap { border: 0.5px solid #222; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+    .history-head { display: grid; grid-template-columns: 110px 1fr; gap: 8px; font-size: 11px; color: #444; padding: 6px 12px; border-bottom: 0.5px solid #1e1e1e; text-transform: uppercase; letter-spacing: 0.05em; }
+    .history-body { max-height: 200px; overflow-y: auto; }
+    .history-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; font-size: 13px; padding: 8px 12px; border-bottom: 0.5px solid #1a1a1a; }
+    .history-row:last-child { border-bottom: none; }
+    .history-row.new { animation: rowflash 0.6s ease; }
+    @keyframes rowflash { from { background: #1f1030; } to { background: transparent; } }
+    .h-time { color: #444; font-family: monospace; font-size: 12px; padding-top: 1px; }
+    .h-name { color: #e5e5e5; }
+
+    /* raw log */
+    .log-wrap { border: 0.5px solid #222; border-radius: 12px; overflow: hidden; }
+    .log-head { display: grid; grid-template-columns: 110px 50px 1fr; gap: 8px; font-size: 11px; color: #444; padding: 6px 12px; border-bottom: 0.5px solid #1e1e1e; text-transform: uppercase; letter-spacing: 0.05em; }
+    .log-body { height: 200px; overflow-y: auto; }
+    .log-row { display: grid; grid-template-columns: 110px 50px 1fr; gap: 8px; font-size: 11px; font-family: monospace; padding: 6px 12px; border-bottom: 0.5px solid #1a1a1a; line-height: 1.6; }
+    .log-row:last-child { border-bottom: none; }
+    .log-row.tx { opacity: 0.3; }
+    .log-row.new { animation: rowflash 0.4s ease; }
+    .t-time { color: #444; } .t-rx { color: #22c55e; } .t-tx { color: #3b82f6; }
+    .t-hex { color: #555; word-break: break-all; }
+    .t-lbl { color: #777; display: block; font-family: system-ui; font-size: 12px; }
+    .empty { padding: 2rem; text-align: center; color: #333; font-size: 14px; }
+
+    .warn-box { background: #2a1a00; border: 0.5px solid #78350f; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #fcd34d; margin-bottom: 1rem; line-height: 1.7; display: none; }
+    .warn-box.show { display: block; }
+    .warn-box code { background: #1a1000; padding: 1px 5px; border-radius: 4px; }
+
+    details { margin-bottom: 1.5rem; }
+    summary { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #444; cursor: pointer; margin-bottom: 8px; }
+    summary:hover { color: #666; }
+  </style>
+</head>
+<body>
+<h1>Kemper Rig Monitor</h1>
+<p class="sub">Polls the Kemper Profiler Player for the active rig name via SysEx every 500 ms.</p>
+
+<div class="row">
+  <button id="btn-connect" onclick="toggleConnect()">Connect MIDI</button>
+  <button id="btn-poll" onclick="togglePoll()" disabled>Start polling</button>
+  <button id="btn-once" onclick="pollOnce()" disabled>Poll once</button>
+  <button onclick="clearAll()">Clear</button>
+  <div class="status"><span class="dot" id="dot"></span><span id="status-text">Not connected</span></div>
+</div>
+
+<div class="warn-box" id="warn-box"></div>
+
+<!-- Current rig -->
+<div class="rig-card">
+  <div class="rig-flash" id="rig-flash"></div>
+  <div class="rig-label">Active rig</div>
+  <div class="rig-name dim" id="rig-name">—</div>
+  <div class="rig-prev" id="rig-prev"></div>
+</div>
+
+<div class="poll-row">
+  <label>Poll interval:</label>
+  <select id="poll-ms" onchange="restartPoll()">
+    <option value="200">200 ms</option>
+    <option value="500" selected>500 ms</option>
+    <option value="1000">1 s</option>
+    <option value="2000">2 s</option>
+  </select>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Polls sent</div><div class="metric-value" id="m-sent">0</div></div>
+  <div class="metric"><div class="metric-label">Replies</div><div class="metric-value" id="m-recv">0</div></div>
+  <div class="metric"><div class="metric-label">Rig changes</div><div class="metric-value" id="m-changes">0</div></div>
+  <div class="metric"><div class="metric-label">No-reply streak</div><div class="metric-value" id="m-streak">0</div></div>
+</div>
+
+<!-- Rig history -->
+<div class="section-label">Rig change history</div>
+<div class="history-wrap">
+  <div class="history-head"><span>Time</span><span>Rig name</span></div>
+  <div class="history-body" id="history-body"><div class="empty">No rig changes yet.</div></div>
+</div>
+
+<!-- Raw log (collapsed by default) -->
+<details>
+  <summary>Raw SysEx log</summary>
+  <div class="log-wrap">
+    <div class="log-head"><span>Time</span><span>Dir</span><span>Hex / parsed</span></div>
+    <div class="log-body" id="log-body"><div class="empty">No messages.</div></div>
+  </div>
+</details>
+
+<script>
+// ── SysEx request ─────────────────────────────────────────────────────────────
+// Confirmed working on Kemper Profiler Player (latest firmware):
+// Function 0x43, address 00 01 → returns current rig name as ASCII from byte 10
+// Reply format: F0 00 20 33 00 00 03 00 00 01 [ASCII name] 00 F7
+const REQ_NAME = [0xF0, 0x00, 0x20, 0x33, 0x02, 0x7F, 0x43, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xF7];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let midi = null, outPort = null, connected = false;
+let polling = false, pollTimer = null;
+let sent = 0, recv = 0, changes = 0, noReplyStreak = 0;
+let currentName = null, prevName = null;
+let history = [], rawLog = [];
+let awaitingReply = false;
+
+// ── Connect ───────────────────────────────────────────────────────────────────
+async function toggleConnect() {
+  if (connected) {
+    stopPoll();
+    if (midi) midi.inputs.forEach(i => { i.onmidimessage = null; });
+    midi = null; outPort = null; connected = false;
+    setDot(''); setText('Disconnected');
+    document.getElementById('btn-connect').textContent = 'Connect MIDI';
+    setEnabled(false);
+    return;
+  }
+  setText('Requesting MIDI access…');
+  try {
+    midi = await navigator.requestMIDIAccess({ sysex: true });
+    connected = true;
+    document.getElementById('btn-connect').textContent = 'Disconnect';
+    bindPorts();
+    midi.onstatechange = bindPorts;
+  } catch (err) {
+    setDot('err');
+    setText('Access denied: ' + err.message);
+    showWarn(`⚠ MIDI access denied — serve via <strong>http://localhost</strong>, use Chrome/Edge.<br>Error: <code>${err.message}</code>`);
+  }
+}
+
+function bindPorts() {
+  if (!midi) return;
+  outPort = null;
+  midi.outputs.forEach(p => {
+    if (p.name.toLowerCase().includes('profiler') || p.name.toLowerCase().includes('kemper')) outPort = p;
+  });
+  midi.inputs.forEach(p => { p.onmidimessage = onMsg; });
+
+  if (!outPort) {
+    showWarn('⚠ No Kemper output port found. Check USB connection and power.');
+    setEnabled(false);
+    setDot('err');
+    setText('Connected — Kemper not found');
+  } else {
+    document.getElementById('warn-box').className = 'warn-box';
+    setEnabled(true);
+    setDot('ok');
+    setText('Connected → ' + outPort.name);
+  }
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+function pollOnce() {
+  if (!outPort) return;
+  outPort.send(REQ_NAME);
+  sent++;
+  awaitingReply = true;
+  document.getElementById('m-sent').textContent = sent;
+  addRaw('TX', REQ_NAME, 'Rig name request (func 0x43, addr 00 01)');
+
+  // Track no-reply streak
+  setTimeout(() => {
+    if (awaitingReply) {
+      noReplyStreak++;
+      document.getElementById('m-streak').textContent = noReplyStreak;
+    }
+  }, 400);
+}
+
+// ── Receive ───────────────────────────────────────────────────────────────────
+function onMsg(e) {
+  const data = Array.from(e.data);
+  if (data[0] !== 0xF0) return;
+  if (data[1] !== 0x00 || data[2] !== 0x20 || data[3] !== 0x33) return;
+
+  awaitingReply = false;
+  noReplyStreak = 0;
+  document.getElementById('m-streak').textContent = 0;
+
+  recv++;
+  document.getElementById('m-recv').textContent = recv;
+
+  const name = parseName(data);
+  addRaw('RX', data, name ? `Rig name: "${name}"` : `Reply (func=0x${data[6].toString(16).toUpperCase()}, ${data.length} bytes)`);
+
+  if (name && name !== currentName) {
+    prevName = currentName;
+    currentName = name;
+    changes++;
+    document.getElementById('m-changes').textContent = changes;
+    updateRigCard(true);
+    addHistory(name);
+  } else if (name && name === currentName) {
+    // Same rig — no change, just update display silently
+    updateRigCard(false);
+  }
+}
+
+// ── Parse ─────────────────────────────────────────────────────────────────────
+// Confirmed reply format:
+// F0 00 20 33 00 00 03 00 00 01 [ASCII...] 00 F7
+// Name starts at byte index 10, ends at first 0x00 or 0xF7
+function parseName(data) {
+  if (data[6] !== 0x03) return null; // only handle string replies
+  const nameBytes = [];
+  for (let i = 10; i < data.length; i++) {
+    if (data[i] === 0x00 || data[i] === 0xF7) break;
+    if (data[i] >= 0x20 && data[i] < 0x7F) nameBytes.push(data[i]);
+  }
+  const name = String.fromCharCode(...nameBytes).trim();
+  return name.length > 0 ? name : null;
+}
+
+// ── Rig card ──────────────────────────────────────────────────────────────────
+function updateRigCard(changed) {
+  const nameEl = document.getElementById('rig-name');
+  const prevEl = document.getElementById('rig-prev');
+  const flashEl = document.getElementById('rig-flash');
+
+  if (currentName) {
+    nameEl.textContent = currentName;
+    nameEl.className = 'rig-name';
+  }
+  if (prevName) {
+    prevEl.textContent = '← ' + prevName;
+  }
+
+  if (changed) {
+    nameEl.className = 'rig-name changed';
+    flashEl.className = 'rig-flash show';
+    setTimeout(() => {
+      nameEl.className = 'rig-name';
+      flashEl.className = 'rig-flash';
+    }, 600);
+  }
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+function addHistory(name) {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8) + '.' + String(now.getMilliseconds()).padStart(3,'0');
+  history.unshift({ ts, name });
+  if (history.length > 100) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const body = document.getElementById('history-body');
+  if (!history.length) { body.innerHTML = '<div class="empty">No rig changes yet.</div>'; return; }
+  body.innerHTML = history.map((e, i) => `
+    <div class="history-row${i === 0 ? ' new' : ''}">
+      <span class="h-time">${e.ts}</span>
+      <span class="h-name">${e.name}</span>
+    </div>`).join('');
+}
+
+// ── Raw log ───────────────────────────────────────────────────────────────────
+function addRaw(dir, data, label) {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8) + '.' + String(now.getMilliseconds()).padStart(3,'0');
+  const hex = Array.from(data).map(x => x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+  rawLog.unshift({ ts, dir, hex, label });
+  if (rawLog.length > 200) rawLog.pop();
+  renderRaw();
+}
+
+function renderRaw() {
+  const body = document.getElementById('log-body');
+  if (!rawLog.length) { body.innerHTML = '<div class="empty">No messages.</div>'; return; }
+  body.innerHTML = rawLog.map((e, i) => `
+    <div class="log-row${e.dir==='TX'?' tx':''}${i===0?' new':''}">
+      <span class="t-time">${e.ts}</span>
+      <span class="t-${e.dir.toLowerCase()}">${e.dir}</span>
+      <span class="t-hex">${e.hex}<span class="t-lbl">${e.label}</span></span>
+    </div>`).join('');
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function togglePoll() {
+  polling ? stopPoll() : startPoll();
+}
+function startPoll() {
+  polling = true;
+  document.getElementById('btn-poll').textContent = 'Stop polling';
+  document.getElementById('dot').classList.add('pulse');
+  pollOnce();
+  pollTimer = setInterval(pollOnce, parseInt(document.getElementById('poll-ms').value));
+}
+function stopPoll() {
+  polling = false;
+  clearInterval(pollTimer);
+  document.getElementById('btn-poll').textContent = 'Start polling';
+  document.getElementById('dot').classList.remove('pulse');
+}
+function restartPoll() { if (polling) { stopPoll(); startPoll(); } }
+
+// ── Misc ──────────────────────────────────────────────────────────────────────
+function clearAll() {
+  history = []; rawLog = [];
+  sent = recv = changes = noReplyStreak = 0;
+  currentName = prevName = null;
+  ['m-sent','m-recv','m-changes','m-streak'].forEach(id => document.getElementById(id).textContent = '0');
+  document.getElementById('rig-name').textContent = '—';
+  document.getElementById('rig-name').className = 'rig-name dim';
+  document.getElementById('rig-prev').textContent = '';
+  renderHistory(); renderRaw();
+}
+
+function setEnabled(on) {
+  ['btn-poll','btn-once'].forEach(id => document.getElementById(id).disabled = !on);
+}
+function setDot(s) { document.getElementById('dot').className = 'dot' + (s ? ' ' + s : ''); }
+function setText(t) { document.getElementById('status-text').textContent = t; }
+function showWarn(h) { const w = document.getElementById('warn-box'); w.className = 'warn-box show'; w.innerHTML = h; }
+</script>
+</body>
+</html>
