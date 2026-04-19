@@ -1,28 +1,34 @@
 {
   "presets": [
-    { "pgm": "1-1", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "1-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "1-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "1-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "1-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-1", "label": "AC20 CLN CMP", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-2", "label": "AC20 CLN", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-3", "label": "AC20 SOLO", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-4", "label": "AC20 UCL", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-5", "label": "AC20 CRU", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
-    { "pgm": "2-1", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "2-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "2-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "2-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "2-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "2-1", "label": "Let me love you", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "2-2", "label": "Falling for you", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "2-3", "label": "Don't start now", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "2-4", "label": "Sweet 7 Nation", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "2-5", "label": "Don't know why", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
-    { "pgm": "3-1", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "3-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "3-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "3-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "3-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "3-1", "label": "The Door", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "3-2", "label": "APT", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "3-3", "label": "Get Lucky", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "3-4", "label": "Nothing Compares 2U", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "3-5", "label": "Stand by me", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
     { "pgm": "4-1", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "4-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "4-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "4-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "4-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+
+    { "pgm": "5-1", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "5-2", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "5-3", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "5-4", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "5-5", "label": "", "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
     { "pgm": "11-1", "label": "CLN CMP", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
     { "pgm": "11-2", "label": "CLN", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
@@ -37,12 +43,49 @@
     { "pgm": "12-5", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
 
     { "pgm": "13-1", "label": "Let me love you", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "14-2", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "15-3", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "16-4", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
-    { "pgm": "17-5", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] }
+    { "pgm": "13-2", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "13-3", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "13-4", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] },
+    { "pgm": "13-5", "label": "", "effectBtns": [ "PRE-Booster", "E2", "E3", "E4" ] }
   ],
   "setlists": [
+
+    {
+      "name": "UJ Default",
+      "cfg": {
+        "directPcOffset": 0,
+        "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH"]
+      },
+      "songs": [
+        { "title": "Love Foolosophy", "program": "1-1" },
+        { "title": "Mercy", "program": "1-4" },
+        { "title": "Valerie", "program": "1-2" },
+        { "title": "The Door", "program": "3-1"},
+        { "title": "Crazy", "program": "1-1" },
+        { "title": "Rolling in the deep", "program": "1-4" },
+        { "title": "Deja Vu", "program": "1-1" },
+        { "title": "Thank you next", "program": "1-1" },
+        { "title": "I want you back", "program": "1-1" },
+        { "title": "Man in the mirror", "program": "1-2" },
+        { "title": "The way you make me", "program": "1-1" },
+        { "title": "Don't know why (III)", "program": "2-5" },
+        { "title": "So easy to fall", "program": "1-1" },
+        { "title": "Kiss", "program": "1-4" },
+        { "title": "Let me love you", "program": "2-1" },
+        { "title": "I feel it coming", "program": "1-1" },
+        { "title": "About Damn Time", "program": "1-1" },   
+        { "title": "Flowers", "program": "1-1" },
+        { "title": "Sweet 7 Nation", "program": "2-4" },
+        { "title": "Sing it back", "program": "1-1" },
+        { "title": "Don't Start Now", "program": "1-3" },
+        { "title": "APT", "program": "1-5" },
+        { "title": "Falling for you", "program": "1-2" },
+        { "title": "I'm Outta Love", "program": "1-1" },
+        { "title": "Lost in Music", "program": "1-1" },
+        { "title": "Hard To Handle", "program": "1-4"}
+      ]
+    },
+
     {
       "name": "CN26-04-25",
       "cfg": {
@@ -50,8 +93,8 @@
         "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH" ]
       },
       "songs": [
-        { "title": "Down Down",               "preset": "21" },
-        { "title": "Bad Moon Rising (B)",     "preset": "17" },
+        { "title": "Down Down",               "preset": "11-4" },
+        { "title": "Bad Moon Rising (B)",     "preset": "11-2" },
         { "title": "The Letter",              "preset": "12-3" },
         { "title": "Dancing in the Dark",     "preset": "11-2" },
         { "title": "This Love",               "preset": "11-1" },
@@ -102,41 +145,7 @@
         { "title": "Whats Up",                "preset": "12-3", "break": 1 },
         { "title": "Angels",                  "preset": "13-5" }
       ]
-    },
-    {
-      "name": "UJ Default",
-      "cfg": {
-        "directPcOffset": 0,
-        "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH"]
-      },
-      "songs": [
-        { "title": "Love Foolosophy", "program": "1-1" },
-        { "title": "Mercy", "program": "1-4" },
-        { "title": "Valerie", "program": "1-2" },
-        { "title": "The Door", "program": "3-1"},
-        { "title": "Crazy", "program": "1-1" },
-        { "title": "Rolling in the deep", "program": "1-4" },
-        { "title": "Deja Vu", "program": "1-1" },
-        { "title": "Thank you next", "program": "1-1" },
-        { "title": "I want you back", "program": "1-1" },
-        { "title": "Man in the mirror", "program": "1-2" },
-        { "title": "The way you make me", "program": "1-1" },
-        { "title": "Don't know why (III)", "program": "2-5" },
-        { "title": "So easy to fall", "program": "1-1" },
-        { "title": "Kiss", "program": "1-4" },
-        { "title": "Let me love you", "program": "2-1" },
-        { "title": "I feel it coming", "program": "1-1" },
-        { "title": "About Damn Time", "program": "1-1" },   
-        { "title": "Flowers", "program": "1-1" },
-        { "title": "Sweet 7 Nation", "program": "2-4" },
-        { "title": "Sing it back", "program": "1-1" },
-        { "title": "Don't Start Now", "program": "1-3" },
-        { "title": "APT", "program": "1-5" },
-        { "title": "Falling for you", "program": "1-2" },
-        { "title": "I'm Outta Love", "program": "1-1" },
-        { "title": "Lost in Music", "program": "1-1" },
-        { "title": "Hard To Handle", "program": "1-4"}
-      ]
     }
+
   ]
 }

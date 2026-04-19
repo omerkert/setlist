@@ -7,7 +7,7 @@
   const els = {
     tuner: document.getElementById('tuner'),
     perfToggle: document.getElementById('perfToggle'),
-    sortToggle: document.getElementById('sortToggle'),
+    modeToggle: document.getElementById('modeToggle'),
     outStatus: document.getElementById('outStatus'),
     inStatus: document.getElementById('inStatus'),
     setlist: document.getElementById('setlist'),
@@ -15,6 +15,7 @@
     setlistMenuBtn: document.getElementById('setlistMenuBtn'),
     setlistDropdown: document.getElementById('setlistDropdown'),
     setlistOptions: document.getElementById('setlistOptions'),
+    presetBankSelector: document.getElementById('presetBankSelector'),
 
     directBtns: [
 			document.getElementById('directBtn1'),
@@ -36,7 +37,9 @@
   };
 
   let currentSetlist = null;
-  let isAlphabeticalSort = false;
+  let displayMode = 'setlist'; // 'setlist' or 'preset'
+  let currentPresetBank = 1;
+  let currentPresetIndex = 0;
 
   // Load setlist from external JSON file using SetlistModels
   async function loadSetlist() {
@@ -70,8 +73,11 @@
     currentSetlist = presetsAndSetlists.getSetlist(index);
     if (!currentSetlist) return;
     currentIndex = 0;
+    displayMode = 'setlist';
+    els.modeToggle.setAttribute('aria-pressed', 'false');
+    els.modeToggle.textContent = '⊞';
     applyDirectButtonLabels();
-    renderSongs();
+    render();
     closeSetlistMenu();
     updateMenuButtonText();
   }
@@ -97,6 +103,91 @@
 		labels.forEach((label, idx) => {
     	els.directBtns[idx].textContent = label;
 		});
+  }
+
+  function getUniqueBanks() {
+    if (!presetsAndSetlists) return [];
+    const banks = new Set();
+    for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
+      const preset = presetsAndSetlists.getPreset(i);
+      if (preset && preset.pgm) {
+        const bank = parseInt(preset.pgm.split('-')[0], 10);
+        banks.add(bank);
+      }
+    }
+    return Array.from(banks).sort((a, b) => a - b);
+  }
+
+  function getPresetsForBank(bank) {
+    if (!presetsAndSetlists) return [];
+    const result = [];
+    for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
+      const preset = presetsAndSetlists.getPreset(i);
+      if (preset && preset.pgm) {
+        const presetBank = parseInt(preset.pgm.split('-')[0], 10);
+        if (presetBank === bank) {
+          result.push(preset);
+        }
+      }
+    }
+    return result;
+  }
+
+  function renderBankSelector() {
+    els.presetBankSelector.innerHTML = '';
+    const banks = getUniqueBanks();
+    const btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '4px';
+    btnContainer.style.flexWrap = 'wrap';
+    
+    banks.forEach(bank => {
+      const btn = document.createElement('button');
+      btn.textContent = `B-${bank}`;
+      btn.className = 'tb';
+      if (bank === currentPresetBank) {
+        btn.setAttribute('aria-pressed', 'true');
+        btn.style.outline = '5px solid #cf352e';
+      }
+      btn.addEventListener('click', () => {
+        currentPresetBank = bank;
+        currentPresetIndex = 0;
+        renderBankSelector();
+        renderPresets();
+      });
+      btnContainer.appendChild(btn);
+    });
+    
+    els.presetBankSelector.appendChild(btnContainer);
+  }
+
+  function renderPresets() {
+    els.setlist.innerHTML = '';
+    const presets = getPresetsForBank(currentPresetBank);
+    
+    presets.forEach((p, idx) => {
+      const row = document.createElement('div');
+      row.className = 'song';
+      if (idx === currentPresetIndex) {
+        row.classList.add('active');
+      }
+      row.dataset.idx = String(idx);
+      const info = document.createElement('div');
+      info.innerHTML = `<div class='preset'>${p.pgm}</div><div class="title">${p.label}</div>`;
+      row.appendChild(info);
+      els.setlist.appendChild(row);
+    });
+  }
+
+  function render() {
+    if (displayMode === 'preset') {
+      els.presetBankSelector.style.display = 'block';
+      renderBankSelector();
+      renderPresets();
+    } else {
+      els.presetBankSelector.style.display = 'none';
+      renderSongs();
+    }
   }
 
   function setBadge(el, text, cls) {
@@ -268,18 +359,14 @@
 
   function getSongsToRender() {
     if (!currentSetlist) return [];
-    if (!isAlphabeticalSort) {
-      return currentSetlist.songs;
-    }
-    // Use setlist's built-in sorted method
-    return currentSetlist.getSongsSorted();
+    return currentSetlist.songs;
   }
 
   function renderSongs() {
     els.setlist.innerHTML = '';
     const songsToRender = getSongsToRender();
     songsToRender.forEach((s, idx) => {
-      if (s.isBreak && s.isBreak() && !isAlphabeticalSort) els.setlist.appendChild(document.createElement('hr'));
+      if (s.isBreak && s.isBreak()) els.setlist.appendChild(document.createElement('hr'));
       const row = document.createElement('div');
       row.className = 'song';
       row.dataset.idx = String(currentSetlist.songs.indexOf(s));
@@ -369,11 +456,17 @@
     }
   });
 
-  els.sortToggle.addEventListener('click', () => {
-    isAlphabeticalSort = !isAlphabeticalSort;
-    els.sortToggle.setAttribute('aria-pressed', isAlphabeticalSort);
-    renderSongs();
-  });
+  function toggleDisplayMode() {
+    displayMode = displayMode === 'setlist' ? 'preset' : 'setlist';
+    if (displayMode === 'preset') {
+      currentPresetIndex = 0;
+    }
+    els.modeToggle.setAttribute('aria-pressed', displayMode === 'preset');
+    els.modeToggle.textContent = displayMode === 'preset' ? '≡' : '⊞';
+    render();
+  }
+
+  els.modeToggle.addEventListener('click', toggleDisplayMode);
 
 
   // Performance mode button (also tries fullscreen)
@@ -452,15 +545,28 @@
     lastTouch = now;
   }, { passive: false });
 
-  // Delegate clicks from setlist to a single handler (fewer listeners)
+  // Delegate clicks from setlist to a single handler (works for both setlist and preset modes)
   els.setlist.addEventListener('click', (ev) => {
     const row = ev.target.closest('.song');
     if (!row) return;
     const idx = Number(row.getAttribute('data-idx'));
-    const s = currentSetlist ? currentSetlist.getSong(idx) : null;
-    if (!s) return;
-    setNotes(s);
-    toPatch(s, idx);
+    
+    if (displayMode === 'preset') {
+      const presets = getPresetsForBank(currentPresetBank);
+      const preset = presets[idx];
+      if (preset) {
+        currentPresetIndex = idx;
+        const midiPatch = calculateMidiPatch(preset.pgm);
+        const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
+        sendPC(1, prog0, 0);
+        renderPresets();
+      }
+    } else {
+      const s = currentSetlist ? currentSetlist.getSong(idx) : null;
+      if (!s) return;
+      setNotes(s);
+      toPatch(s, idx);
+    }
   });
 
   loadSetlist();

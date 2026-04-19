@@ -243,6 +243,10 @@ main {
   background: #222222;
 }
 
+.list {
+  max-width: 600px;
+}
+
 .title, .preset {
   font-weight: 500;
   /* font-size: 28px; 6vmin */
