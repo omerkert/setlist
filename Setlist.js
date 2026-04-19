@@ -2,15 +2,19 @@
   let midiAccess = null;
   let midiOut = null;
   let currentIndex = 0;
+  let presetsAndSetlists = null;
+  let currentSetlistIndex = 0;
   const els = {
     tuner: document.getElementById('tuner'),
     perfToggle: document.getElementById('perfToggle'),
     sortToggle: document.getElementById('sortToggle'),
-    enable: document.getElementById('enableMidi'),
     outStatus: document.getElementById('outStatus'),
     inStatus: document.getElementById('inStatus'),
     setlist: document.getElementById('setlist'),
     notes: document.getElementById('notes'),
+    setlistMenuBtn: document.getElementById('setlistMenuBtn'),
+    setlistDropdown: document.getElementById('setlistDropdown'),
+    setlistOptions: document.getElementById('setlistOptions'),
 
     directBtns: [
 			document.getElementById('directBtn1'),
@@ -31,28 +35,65 @@
     ]        
   };
 
-  let songs = [];
-  let cfg = { directPcOffset: 0 };
+  let currentSetlist = null;
   let isAlphabeticalSort = false;
 
-  // Load cfg + setlist from external JSON file
+  // Load setlist from external JSON file using SetlistModels
   async function loadSetlist() {
     try {
-      const response = await fetch('Setlist.json');
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      cfg = data.cfg || { directPcOffset: 0 };
-      songs = data.songs || [];
-      applyDirectButtonLabels();
-      renderSongs();
+      presetsAndSetlists = await PresetsAndSetlists.loadFromFile('Setlist.json');
+      populateSetlistMenu();
+      // Load the first setlist (index 0)
+      selectSetlist(0);
     } catch (error) {
       console.error('Failed to load setlist:', error);
       els.setlist.innerHTML = '<p style="color: #ff6b6b;">Error loading setlist!</p>';
     }
   }
 
+  function populateSetlistMenu() {
+    if (!presetsAndSetlists) return;
+    els.setlistOptions.innerHTML = '';
+    const count = presetsAndSetlists.getSetlistCount();
+    for (let i = 0; i < count; i++) {
+      const sl = presetsAndSetlists.getSetlist(i);
+      const btn = document.createElement('button');
+      btn.textContent = sl.name;
+      btn.setAttribute('data-index', String(i));
+      btn.addEventListener('click', () => { selectSetlist(i); });
+      els.setlistOptions.appendChild(btn);
+    }
+  }
+
+  function selectSetlist(index) {
+    currentSetlistIndex = index;
+    currentSetlist = presetsAndSetlists.getSetlist(index);
+    if (!currentSetlist) return;
+    currentIndex = 0;
+    applyDirectButtonLabels();
+    renderSongs();
+    closeSetlistMenu();
+    updateMenuButtonText();
+  }
+
+  function updateMenuButtonText() {
+    if (currentSetlist) {
+      els.setlistMenuBtn.textContent = currentSetlist.name.substring(0, 10);
+      els.setlistMenuBtn.title = currentSetlist.name;
+    }
+  }
+
+  function toggleSetlistMenu() {
+    const isOpen = els.setlistDropdown.style.display !== 'none';
+    els.setlistDropdown.style.display = isOpen ? 'none' : 'block';
+  }
+
+  function closeSetlistMenu() {
+    els.setlistDropdown.style.display = 'none';
+  }
+
   function applyDirectButtonLabels() {
-    const labels = cfg.directButtons || ['CLEAN', 'UN-CLEAN', 'SOLO', 'CRUNCH', 'HI-GAIN'];
+    const labels = currentSetlist ? currentSetlist.getDirectButtons() : ['CLEAN', 'UN-CLEAN', 'SOLO', 'CRUNCH', 'HI-GAIN'];
 		labels.forEach((label, idx) => {
     	els.directBtns[idx].textContent = label;
 		});
@@ -204,7 +245,8 @@
     const useBank = true;
     const oneBased = true;
     const ch = (song.channel >= 1 && song.channel <= 16) ? song.channel : 1;
-    const midiPatch = calculateMidiPatch(song.preset);
+    const preset = song instanceof Song ? song.getPreset() : song.preset;
+    const midiPatch = calculateMidiPatch(preset);
     const prog0 = oneBased ? Math.max(0, Math.min(127, midiPatch - 1)) : Math.max(0, Math.min(127, midiPatch));
     console.info(`useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0}`);
     let t = 0;
@@ -225,23 +267,24 @@
   }
 
   function getSongsToRender() {
+    if (!currentSetlist) return [];
     if (!isAlphabeticalSort) {
-      return songs;
+      return currentSetlist.songs;
     }
-    // Create a sorted copy without modifying original
-    return [...songs].sort((a, b) => a.title.localeCompare(b.title));
+    // Use setlist's built-in sorted method
+    return currentSetlist.getSongsSorted();
   }
 
   function renderSongs() {
     els.setlist.innerHTML = '';
     const songsToRender = getSongsToRender();
     songsToRender.forEach((s, idx) => {
-      if (s.break > 0 && !isAlphabeticalSort) els.setlist.appendChild(document.createElement('hr'));
+      if (s.isBreak && s.isBreak() && !isAlphabeticalSort) els.setlist.appendChild(document.createElement('hr'));
       const row = document.createElement('div');
       row.className = 'song';
-      row.dataset.idx = String(songs.indexOf(s));
+      row.dataset.idx = String(currentSetlist.songs.indexOf(s));
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${s.preset}</div><div class="title">${s.title}</div>`;
+      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });
@@ -292,15 +335,15 @@
   }
 
   function patchPrevious() {
-    if (!songs.length || currentIndex===0) return;
-    currentIndex = (currentIndex - 1 + songs.length) % songs.length;
-    toPatch(songs[currentIndex], currentIndex);
+    if (!currentSetlist || currentSetlist.getSongCount() === 0 || currentIndex === 0) return;
+    currentIndex = (currentIndex - 1 + currentSetlist.getSongCount()) % currentSetlist.getSongCount();
+    toPatch(currentSetlist.getSong(currentIndex), currentIndex);
   }
 
   function patchNext() {
-    if (!songs.length || currentIndex===songs.length-1) return;
-    currentIndex = (currentIndex + 1) % songs.length;
-    toPatch(songs[currentIndex], currentIndex);
+    if (!currentSetlist || currentSetlist.getSongCount() === 0 || currentIndex === currentSetlist.getSongCount() - 1) return;
+    currentIndex = (currentIndex + 1) % currentSetlist.getSongCount();
+    toPatch(currentSetlist.getSong(currentIndex), currentIndex);
   }
 
   document.getElementById('zoomIn').addEventListener('click', () => {
@@ -353,13 +396,14 @@
       if(els.directMode) {
         els.directMode.click();
       } else {
-        toPatch(songs[currentIndex], currentIndex);
+        toPatch(currentSetlist.getSong(currentIndex), currentIndex);
       }
       els.soloSelected = false;
     } else {
       els.directBtns.forEach((b) => { b.style.outline = 'none'; });
       highlightBtn(els.directBtns[2]);
-      sendPC(1, cfg.directPcOffset+2, 8);
+      const directPcOffset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0;
+      sendPC(1, directPcOffset+2, 8);
       els.soloSelected = true;
     }
   }
@@ -383,15 +427,22 @@
     btn.addEventListener('click', () => { toggleEffectButton(btn, 75+i); });
   });
 
-  els.directBtns[0].addEventListener('click', () => { sendPC(1, cfg.directPcOffset+0, 8); selectDirect(els.directBtns[0]); });
-  els.directBtns[1].addEventListener('click', () => { sendPC(1, cfg.directPcOffset+1, 8); selectDirect(els.directBtns[1]); });
+  els.setlistMenuBtn.addEventListener('click', toggleSetlistMenu);
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (ev) => {
+    if (!els.setlistMenuBtn.contains(ev.target) && !els.setlistDropdown.contains(ev.target)) {
+      closeSetlistMenu();
+    }
+  });
+
+  els.directBtns[0].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+0, 8); selectDirect(els.directBtns[0]); });
+  els.directBtns[1].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+1, 8); selectDirect(els.directBtns[1]); });
 
   els.directBtns[2].addEventListener('click', () => { toggleSolo(); });
 	
-  els.directBtns[3].addEventListener('click', () => { sendPC(1, cfg.directPcOffset+3, 8); selectDirect(els.directBtns[3]); });
-  els.directBtns[4].addEventListener('click', () => { sendPC(1, cfg.directPcOffset+4, 8); selectDirect(els.directBtns[4]); });
-
-  els.enable.addEventListener('click', enableMIDI);
+  els.directBtns[3].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+3, 8); selectDirect(els.directBtns[3]); });
+  els.directBtns[4].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+4, 8); selectDirect(els.directBtns[4]); });
 
   // Prevent accidental zoom on double tap
   let lastTouch = 0;
@@ -406,7 +457,7 @@
     const row = ev.target.closest('.song');
     if (!row) return;
     const idx = Number(row.getAttribute('data-idx'));
-    const s = songs[idx];
+    const s = currentSetlist ? currentSetlist.getSong(idx) : null;
     if (!s) return;
     setNotes(s);
     toPatch(s, idx);

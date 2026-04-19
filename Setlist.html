@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>UJ Setlist</title>
+  <title>PLAYER Setlist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0f16" />
   <link rel="stylesheet" href="Setlist.css">
@@ -12,7 +12,13 @@
 <body>
   <header>
     <div class="bar">
-      <button id="enableMidi" class="primary">MIDI</button>
+      <!-- <button id="enableMidi" class="primary">MIDI</button> -->
+      <div id="setlistMenu" class="menu-container">
+        <button id="setlistMenuBtn" class="tb" title="Select setlist">☰</button>
+        <div id="setlistDropdown" class="menu-dropdown" style="display: none;">
+          <div id="setlistOptions"></div>
+        </div>
+      </div>
       <span id="inStatus" class="pill warn">No MIDI</span>
       <span id="outStatus" class="pill warn">No MIDI</span>
 
@@ -55,6 +61,7 @@
     </div>
   </div>
 
+  <script src="SetlistModels.js"></script>
   <script src="Setlist.js"></script>
 </body>
 

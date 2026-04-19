@@ -110,6 +110,51 @@ button:disabled {
   opacity: .55;
 }
 
+.menu-container {
+  position: relative;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 4px;
+  min-width: 200px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.menu-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 12px 14px;
+  margin: 0;
+  color: var(--fg);
+  cursor: pointer;
+  min-height: auto;
+}
+
+.menu-dropdown button:last-child {
+  border-bottom: none;
+}
+
+.menu-dropdown button:hover {
+  background: var(--btn-hi);
+}
+
+.menu-dropdown button.active {
+  background: var(--btn-solo);
+  color: #f19f9f;
+}
+
 .notes {
   display: grid;
   grid-template-columns: 1fr auto;
