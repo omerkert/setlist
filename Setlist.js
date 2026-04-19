@@ -39,7 +39,7 @@
   let currentSetlist = null;
   let displayMode = 'setlist'; // 'setlist' or 'preset'
   let currentPresetBank = 1;
-  let currentPresetIndex = 0;
+  let currentPreset = 0;
 
   // Load setlist from external JSON file using SetlistModels
   async function loadSetlist() {
@@ -151,7 +151,6 @@
       }
       btn.addEventListener('click', () => {
         currentPresetBank = bank;
-        currentPresetIndex = 0;
         renderBankSelector();
         renderPresets();
       });
@@ -168,7 +167,15 @@
     presets.forEach((p, idx) => {
       const row = document.createElement('div');
       row.className = 'song';
-      if (idx === currentPresetIndex) {
+      // Find global index of this preset
+      let globalIdx = -1;
+      for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
+        if (presetsAndSetlists.getPreset(i) === p) {
+          globalIdx = i;
+          break;
+        }
+      }
+      if (globalIdx === currentPreset) {
         row.classList.add('active');
       }
       row.dataset.idx = String(idx);
@@ -459,9 +466,6 @@
 
   function toggleDisplayMode() {
     displayMode = displayMode === 'setlist' ? 'preset' : 'setlist';
-    if (displayMode === 'preset') {
-      currentPresetIndex = 0;
-    }
     els.modeToggle.setAttribute('aria-pressed', displayMode === 'preset');
     els.modeToggle.textContent = displayMode === 'preset' ? '≡' : '⊞';
     render();
@@ -474,6 +478,7 @@
   els.perfToggle.addEventListener('click', async () => {
     const on = document.body.classList.toggle('performance');
     els.perfToggle.setAttribute('aria-pressed', on);
+    els.perfToggle.textContent = on ? '⇙' : '⇗';
     try {
       if (on && document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
@@ -556,7 +561,13 @@
       const presets = getPresetsForBank(currentPresetBank);
       const preset = presets[idx];
       if (preset) {
-        currentPresetIndex = idx;
+        // Find global index of this preset
+        for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
+          if (presetsAndSetlists.getPreset(i) === preset) {
+            currentPreset = i;
+            break;
+          }
+        }
         const midiPatch = calculateMidiPatch(preset.pgm);
         const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
         sendPC(1, prog0, 0);
@@ -586,21 +597,44 @@
       e.preventDefault();
       e.stopPropagation();
       const presets = getPresetsForBank(currentPresetBank);
-      const maxIndex = presets.length - 1;
-      let newIndex = currentPresetIndex;
-      if (e.key === 'ArrowUp' && currentPresetIndex > 0) {
-        newIndex = currentPresetIndex - 1;
-      } else if (e.key === 'ArrowDown' && currentPresetIndex < maxIndex) {
-        newIndex = currentPresetIndex + 1;
-      }
-      if (newIndex !== currentPresetIndex) {
-        currentPresetIndex = newIndex;
-        const preset = presets[currentPresetIndex];
-        if (preset) {
-          const midiPatch = calculateMidiPatch(preset.pgm);
-          const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
-          sendPC(1, prog0, 0);
+      if (presets.length === 0) return;
+      // Find current position in this bank
+      let currentBankIdx = -1;
+      for (let i = 0; i < presets.length; i++) {
+        let globalIdx = -1;
+        for (let j = 0; j < presetsAndSetlists.getPresetCount(); j++) {
+          if (presetsAndSetlists.getPreset(j) === presets[i]) {
+            globalIdx = j;
+            break;
+          }
         }
+        if (globalIdx === currentPreset) {
+          currentBankIdx = i;
+          break;
+        }
+      }
+      if (currentBankIdx === -1) {
+        // If current preset not in this bank, start from 0 or end
+        currentBankIdx = e.key === 'ArrowDown' ? -1 : presets.length;
+      }
+      let newBankIdx = currentBankIdx;
+      if (e.key === 'ArrowUp' && currentBankIdx > 0) {
+        newBankIdx = currentBankIdx - 1;
+      } else if (e.key === 'ArrowDown' && currentBankIdx < presets.length - 1) {
+        newBankIdx = currentBankIdx + 1;
+      }
+      if (newBankIdx !== currentBankIdx) {
+        // Set currentPreset to global index of the new preset
+        const newPreset = presets[newBankIdx];
+        for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
+          if (presetsAndSetlists.getPreset(i) === newPreset) {
+            currentPreset = i;
+            break;
+          }
+        }
+        const midiPatch = calculateMidiPatch(newPreset.pgm);
+        const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
+        sendPC(1, prog0, 0);
         renderPresets();
       }
     }
