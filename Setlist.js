@@ -16,6 +16,7 @@
     setlistDropdown: document.getElementById('setlistDropdown'),
     setlistOptions: document.getElementById('setlistOptions'),
     presetBankSelector: document.getElementById('presetBankSelector'),
+    footer: document.querySelector('.footer'),
 
     directBtns: [
 			document.getElementById('directBtn1'),
@@ -201,9 +202,15 @@
     el.textContent = text;
     el.className = `pill ${cls}`;
   }
+  function setFooterVisible(visible) {
+    if (!els.footer) return;
+    els.footer.style.display = visible ? 'block' : 'none';
+  }
+
   function setOutStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
     setBadge(els.outStatus, text, cls);
+    setFooterVisible(level === 'ok');
   }
   function setInStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
@@ -288,9 +295,8 @@
   }
 
   function refreshMidiOut() {
-    console.log(Array.from(midiAccess.outputs.values()));
-    const outputs = midiAccess ? Array.from(midiAccess.outputs.values().filter((o) => o.name === 'Profiler')) : [];
-    midiOut = outputs[0] || null;
+    const outputs = midiAccess ? Array.from(midiAccess.outputs.values()) : [];
+    midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || outputs[0] || null;
     setOutStatus(midiOut ? midiOut.name : 'NO MIDI-OUT', midiOut ? 'ok' : 'warn');
   }
 
@@ -381,10 +387,11 @@
       if (s.hasCapo && s.hasCapo()) classes.push('capo');
       row.className = classes.join(' ');
       row.dataset.idx = String(currentSetlist.songs.indexOf(s));
+      const keyLabel = s.key ? `<span class="key-tag">${s.key}</span>` : '';
       const pauseLabel = s.hasNoPause && s.hasNoPause() ? '<span class="pause-tag">↔ no pause</span>' : '';
       const capoLabel = s.hasCapo && s.hasCapo() ? `<span class="capo-tag">${s.capo}</span>` : '';
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}${pauseLabel}${capoLabel}</div>`;
+      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}${keyLabel}${pauseLabel}${capoLabel}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });

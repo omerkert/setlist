@@ -229,7 +229,7 @@ main {
 
 #setlistGrid {
   display: grid;
-  grid-template-columns: 60% 40%;
+  grid-template-columns: 70% 30%;
   width: 100%;
   gap: 8px;
   margin-bottom: 82px;
@@ -279,6 +279,18 @@ main {
   color: #f4c430;
   background: rgba(244, 196, 48, 0.12);
   font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.key-tag {
+  display: inline-block;
+  margin-left: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid #f4c460;
+  border-radius: 999px;
+  color: #f4c460;
+  background: rgba(244, 196, 48, 0.12);
+  font-size: 1.7rem;
   vertical-align: middle;
 }
 
@@ -363,6 +375,7 @@ body.performance .send {
 }
 
 .footer {
+  display: none;
   position: fixed;
   bottom: 0;
   left: 0;

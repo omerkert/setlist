@@ -14,6 +14,7 @@ class Song {
     this.break = data.break || 0;
     this.noPause = data['no-pause'] || data.noPause || 0;
     this.capo = data.capo || '';
+    this.key = data.key || '';
     this.GT1 = data.GT1 || '';
     this.channel = data.channel || 1;
     this.bankMSB = data.bankMSB;
