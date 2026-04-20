@@ -12,6 +12,8 @@ class Song {
     this.preset = data.preset || data.program || '';
     this.notes = data.notes || '';
     this.break = data.break || 0;
+    this.noPause = data['no-pause'] || data.noPause || 0;
+    this.capo = data.capo || '';
     this.GT1 = data.GT1 || '';
     this.channel = data.channel || 1;
     this.bankMSB = data.bankMSB;
@@ -37,6 +39,14 @@ class Song {
    */
   isBreak() {
     return this.break > 0;
+  }
+
+  hasNoPause() {
+    return this.noPause > 0;
+  }
+
+  hasCapo() {
+    return this.capo && String(this.capo).trim().length > 0;
   }
 }
 

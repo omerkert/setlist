@@ -376,10 +376,15 @@
     songsToRender.forEach((s, idx) => {
       if (s.isBreak && s.isBreak()) els.setlist.appendChild(document.createElement('hr'));
       const row = document.createElement('div');
-      row.className = 'song';
+      const classes = ['song'];
+      if (s.hasNoPause && s.hasNoPause()) classes.push('no-pause');
+      if (s.hasCapo && s.hasCapo()) classes.push('capo');
+      row.className = classes.join(' ');
       row.dataset.idx = String(currentSetlist.songs.indexOf(s));
+      const pauseLabel = s.hasNoPause && s.hasNoPause() ? '<span class="pause-tag">↔ no pause</span>' : '';
+      const capoLabel = s.hasCapo && s.hasCapo() ? `<span class="capo-tag">${s.capo}</span>` : '';
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}</div>`;
+      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}${pauseLabel}${capoLabel}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });

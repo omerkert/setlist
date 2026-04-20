@@ -10,7 +10,7 @@
   --ok: #75f0c1;
   --btn: #1c2a44;
   --btn-hi: #22365f;
-  --btn-solo: #39225f;
+  --btn-solo: #a7bfc0;
   --tap: 18px;
   /* min target radius guideline */
   --pad: 14px;
@@ -89,17 +89,35 @@ button.directBtn {
   padding: 2px;
   margin: 2px;
   width: 8em;
-  font-size: 20px
+  font-size: 20px;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+button.directBtn:hover,
+button.directBtn:focus {
+  background: linear-gradient(180deg, #3d5a8e, #1e304e);
+  border-color: #5a7bb6;
+  box-shadow: 0 10px 18px rgba(0, 75, 160, 0.26);
+  transform: translateY(-1px);
 }
 
 button.soloBtn {
-  background: linear-gradient(180deg, var(--btn-solo), var(--btn));
-  border-color: #632f70;
-  padding: 18px;
+  background: linear-gradient(180deg, #ff5f7f, #ff9147);
+  border-color: #ff7f5f;
+  box-shadow: 0 12px 20px rgba(255, 95, 127, 0.35);
+  padding: 18px 16px;
   margin: 10px;
   width: 8em;
   font-size: 20px;
-  color: #f19f9f
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+button.soloBtn:hover,
+button.soloBtn:focus {
+  background: linear-gradient(180deg, #ff738c, #ffa56a);
+  border-color: #ff8b64;
 }
 
 button:active {
@@ -167,7 +185,7 @@ button:disabled {
   margin: 8px 0;
   max-height: 70vh;
   font-family: monospace;
-  font-size: 1.1em;
+  font-size: 2em;
   white-space: pre-wrap;
   position: fixed;
   top: 80px;
@@ -211,7 +229,8 @@ main {
 
 #setlistGrid {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 60% 40%;
+  width: 100%;
   gap: 8px;
   margin-bottom: 82px;
   margin-left: 8px;
@@ -243,14 +262,47 @@ main {
   background: #222222;
 }
 
+.song.no-pause {
+  border-color: #f4c430;
+}
+
+.song.capo {
+  border-color: #b57cff;
+}
+
+.pause-tag {
+  display: inline-block;
+  margin-left: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid #f4c430;
+  border-radius: 999px;
+  color: #f4c430;
+  background: rgba(244, 196, 48, 0.12);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.capo-tag {
+  display: inline-block;
+  margin-left: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid #b57cff;
+  border-radius: 999px;
+  color: #b57cff;
+  background: rgba(181, 124, 255, 0.16);
+  font-size: 1.5rem;
+  vertical-align: middle;
+}
+
 .list {
-  max-width: 600px;
+  width: 100%;
+  max-width: none;
 }
 
 .title, .preset {
   font-weight: 500;
   /* font-size: 28px; 6vmin */
-  font-size: clamp(1.5rem, 2vw + 1rem, 3rem);
+  font-size: clamp(1.3rem, 2vw + 1rem, 2.3rem);
   /* font-family: 'Courier New', Courier, monospace; */
   font-family:'Lucida Sans Typewriter', 'Lucida Typewriter', monospace;
 }

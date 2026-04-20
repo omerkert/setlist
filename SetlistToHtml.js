@@ -37,6 +37,30 @@ const htmlContent = `<!DOCTYPE html>
             background-color: #f9f9f9;
         }
 
+        .pause-flag {
+            display: inline-block;
+            margin-left: 0.75rem;
+            padding: 3px 8px;
+            border: 1px solid #f4c430;
+            border-radius: 999px;
+            color: #5a4300;
+            background: rgba(244, 196, 48, 0.18);
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+
+        .capo-flag {
+            display: inline-block;
+            margin-left: 0.75rem;
+            padding: 3px 8px;
+            border: 1px solid #3fc1c9;
+            border-radius: 999px;
+            color: #0c4c56;
+            background: rgba(63, 193, 201, 0.18);
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+
         hr { border-top: 4px solid #000; }
     </style>
 </head>
@@ -44,7 +68,9 @@ const htmlContent = `<!DOCTYPE html>
     <div class="setlist">
 ${setlistData.songs.map(song => {
                 const breakLine = song.break ? '        <hr/>\n' : '';
-                return `${breakLine}        <div class="song-row">${song.title}</div>`;
+                const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
+                const capoLine = song.capo ? `<span class="capo-flag">capo ${song.capo}</span>` : '';
+                return `${breakLine}        <div class="song-row">${song.title}${pauseLine}${capoLine}</div>`;
             }).join('\n')}
     </div>
 </body>
