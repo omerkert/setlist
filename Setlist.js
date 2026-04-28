@@ -142,6 +142,8 @@
     btnContainer.style.gap = '4px';
     btnContainer.style.flexWrap = 'wrap';
     
+    console.log("Rendering bank selector, banks=", banks);
+
     banks.forEach(bank => {
       const btn = document.createElement('button');
       btn.textContent = `B-${bank}`;

@@ -9,7 +9,7 @@
 class Song {
   constructor(data = {}) {
     this.title = data.title || '';
-    this.preset = data.preset || data.program || '';
+    this.pgm = data.pgm || '';
     this.notes = data.notes || '';
     this.break = data.break || 0;
     this.noPause = data['no-pause'] || data.noPause || 0;
@@ -25,7 +25,7 @@ class Song {
    * Get the preset/program identifier for this song
    */
   getPreset() {
-    return this.preset;
+    return this.pgm;
   }
 
   /**

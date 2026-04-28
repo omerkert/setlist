@@ -4,6 +4,7 @@ const path = require('path');
 // Read the Setlist.json file
 const setlistPath = path.join(__dirname, 'Setlist.json');
 const setlistData = JSON.parse(fs.readFileSync(setlistPath, 'utf8'));
+const setlistIndex = 2; // Change this index to select a different setlist
 
 // Create HTML content
 const htmlContent = `<!DOCTYPE html>
@@ -57,7 +58,7 @@ const htmlContent = `<!DOCTYPE html>
             border-radius: 999px;
             color: #0c4c56;
             background: rgba(63, 193, 201, 0.18);
-            font-size: 0.8rem;
+            font-size: 1.8rem;
             vertical-align: middle;
         }
 
@@ -66,10 +67,10 @@ const htmlContent = `<!DOCTYPE html>
 </head>
 <body>
     <div class="setlist">
-${setlistData.songs.map(song => {
+${setlistData.setlists[setlistIndex].songs.map(song => {
                 const breakLine = song.break ? '        <hr/>\n' : '';
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
-                const capoLine = song.capo ? `<span class="capo-flag">capo ${song.capo}</span>` : '';
+                const capoLine = song.capo ? `<span class="capo-flag">${song.capo}</span>` : '';
                 return `${breakLine}        <div class="song-row">${song.title}${pauseLine}${capoLine}</div>`;
             }).join('\n')}
     </div>
@@ -81,4 +82,4 @@ const outputPath = path.join(__dirname, 'Setlist-Rendered.html');
 fs.writeFileSync(outputPath, htmlContent, 'utf8');
 
 console.log(`HTML file created: ${outputPath}`);
-console.log(`Total songs: ${setlistData.songs.length}`);
+console.log(`Total songs: ${setlistData.setlists[setlistIndex].songs.length}`);
