@@ -1,0 +1,157 @@
+<html>
+<body>
+	<script>
+
+  // avoid timeout by sending a "keep-editor-mode" message every 15 seconds
+	setInterval(() => {
+			// Requesting 4 bytes from address 00 01 00 00
+			// This keeps the connection "hot"
+			const requestMsg = [0xF0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x30, 0x11, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x7B, 0xF7];
+			midiOutput.send(requestMsg);
+	}, 15000);
+
+	async function activateAndSwitch(midiOutput) {
+			await new Promise(r => setTimeout(r, 500));
+
+			// 1. Send the specific GT-1 'Editor Mode ON' for Device ID 0
+			// Header: F0 41 00 00 00 00 30 12 
+			// Address: 7F 00 00 01 | Data: 01 | Checksum: 7F
+			//const wakeUp = [0xF0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x30, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x01, 0x7F, 0xF7];
+			const wakeUp = [0xF0, 0x41, 0x00, 0x00, 0x00, 0x30, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x01, 0x7F, 0xF7];
+			
+			console.log("Sending Wakeup...");
+			midiOutput.send(wakeUp);
+
+			// 2. Wait for the GT-1 to toggle its internal state
+			await new Promise(r => setTimeout(r, 500));
+
+			// 3. Send the Program Change (PC) to Channel 1
+			// Using 0xC0 for Channel 1. Change to 0xC1, etc., if needed.
+
+			//midiOutput.send([0xB0, 0x00, 0x00]); // Bank Select MSB
+    	//midiOutput.send([0xB0, 0x20, 0x00]); // Bank Select LSB
+    	//await new Promise(r => setTimeout(r, 50));
+
+			const patch = 0x02; // This would be U03
+			//midiOutput.send([0xC0, patch]);
+			
+			goToPatch(midiOutput, patch); // This would be U03 (patch index 2)
+
+			console.log(`Sent PC ${patch} to Channel 1`);
+	}
+
+	async function goToPatch(midiOutput, patchNum) {
+    // addr: 00 01 00 00 (Current Patch Address)
+    // data: 00 [patchNum]
+    const addr = [0x00, 0x01, 0x00, 0x00];
+    const data = [0x00, patchNum]; 
+
+    // Calculation for Checksum
+    let sum = 0;
+    const body = [...addr, ...data];
+    body.forEach(b => sum += b);
+    const checksum = (128 - (sum % 128)) & 0x7F;
+
+    const msg = [0xF0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x30, 0x12, ...body, checksum, 0xF7];
+    
+    midiOutput.send(msg);
+    console.log(`Command sent to switch to patch index ${patchNum}`);
+		// GT-1 requires 50-100ms to load the patch, so we wait a bit before sending any more commands
+		await new Promise(r => setTimeout(r, 150));
+
+		// if you receive a message starting with F0 41 00, turn a UI element Green.
+		// If the connection drops (no FE active sensing messages for 5 seconds), turn it Red.
+	}
+
+	navigator.requestMIDIAccess({ sysex: true }).then(access => {
+    const inputs = Array.from(access.inputs.values());
+    const outputs = Array.from(access.outputs.values());
+
+    const gt1Input = inputs.find(i => i.name.includes("GT-1"));
+    const gt1Output = outputs.find(o => o.name.includes("GT-1"));
+
+		console.log(gt1Input);
+		console.log(gt1Output);
+
+    if (gt1Input) {
+        console.log("Listening for GT-1 responses..." + gt1Input.state);
+        gt1Input.onmidimessage = (message) => {
+            // message.data is a Uint8Array
+            const hex = Array.from(message.data)
+                .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+                .join(' ');
+            
+            console.log(`Incoming from GT-1: ${hex}`);
+
+            // Specific Check: If it starts with F0 41, it's a Boss SysEx reply
+            if (message.data[0] === 0xF0 && message.data[1] === 0x41) {
+                console.log("✅ GT-1 Handshake acknowledged!");
+            }
+        };
+    }
+
+	  console.log(`Sending INIT SysEx to GT-1...`);
+    //const wakeUp = [0xF0, 0x41, 0x10, 0x00, 0x00, 0x00, 0x30, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x01, 0x7F, 0xF7];
+		const wakeUp = [0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7];
+    gt1Output.send(wakeUp);
+
+		activateAndSwitch(gt1Output);
+
+	});
+
+	/**
+	 * Sends a Roland/Boss DT1 (Data Set) SysEx message
+	 * @param {Array} addr - 4-byte address array, e.g., [0x60, 0x00, 0x00, 0x10]
+	 * @param {Array} data - Data bytes, e.g., [0x01] for ON, [0x00] for OFF
+	 */
+	function sendBossCommand(addr, data) {
+    // 1. Construct the Header
+    // F0 = Start
+    // 41 = Roland/Boss
+    // 00 = Device ID (Your unit is 0)
+    // 00 00 00 30 = GT-1 Model ID
+    // 12 = Command ID (DT1 - Data Set)
+    const header = [0xF0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x30, 0x12];
+    
+    // 2. Prepare the Body for Checksum
+    const body = [...addr, ...data];
+    
+    // 3. Calculate Checksum
+    // Formula: 128 - (Sum of Body % 128)
+    let sum = 0;
+    for (let i = 0; i < body.length; i++) {
+        sum += body[i];
+    }
+    let checksum = (128 - (sum % 128)) & 0x7F;
+
+    // 4. Assemble the full message
+    const fullMsg = [...header, ...body, checksum, 0xF7];
+
+    // 5. Send to the GT-1
+    if (midiOutput) {
+        midiOutput.send(fullMsg);
+        // Optional: Debugging log to see the hex in console
+        // console.log("Sent Hex:", fullMsg.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' '));
+    } else {
+        console.error("MIDI Output not initialized!");
+    }
+	}
+
+	function toggleEffect(effectAddr, turnOn) {
+    const data = [turnOn ? 0x01 : 0x00];
+    
+    // We use the same devId (0x00) and Model ID structure as before
+    sendBossCommand(0x00, effectAddr, data);
+	}	
+	</script>
+
+<!--
+OD/DS (Overdrive)	60 00 00 10		00 or 01 / on or off
+PREAMP (Amp Sim)	60 00 00 21		00 or 01
+DELAY							60 00 05 00		00 or 01
+REVERB						60 00 05 20		00 or 01
+COMPRESSOR				60 00 00 00		00 or 01
+MODULATION				60 00 01 00		00 or 01
+-->
+</body>
+</html>

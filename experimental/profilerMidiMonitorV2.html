@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kemper Player Preset Reader</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.45}
+    button,input{font:inherit}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+    pre{background:#111;color:#0f0;padding:12px;border-radius:8px;overflow:auto}
+    code{background:#f2f2f2;padding:2px 4px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <h1>Kemper Profiler Player preset reader</h1>
+  <p>This page listens for MIDI and requests the current preset name. It can also display the preset number if your device/controller sends it or if you map it yourself.</p>
+
+  <div class="row">
+    <button id="btnConnect">Connect MIDI</button>
+    <button id="btnRequestName" disabled>Request preset name</button>
+    <button id="btnClear">Clear log</button>
+  </div>
+
+  <div class="row">
+    <label>Player MIDI input hint:</label>
+    <input id="midiHint" value="Kemper" style="min-width:240px" />
+  </div>
+
+  <p><strong>Current preset number:</strong> <span id="presetNumber">-</span></p>
+  <p><strong>Current preset name:</strong> <span id="presetName">-</span></p>
+  <pre id="log"></pre>
+
+<script>
+const kemperSysexHeader = [0xF0, 0x00, 0x20, 0x33, 0x02, 0x7F];
+const requestStringCode = 0x43;
+const currentRigNameAddress = [0x00, 0x00, 0x01];
+let midiAccess, inputPort;
+
+const $ = id => document.getElementById(id);
+const log = msg => {$('log').textContent = `${new Date().toLocaleTimeString()}  ${msg}\n` + $('log').textContent;};
+
+function bytesToAscii(data){
+  return Array.from(data).map(b => b >= 32 && b <= 126 ? String.fromCharCode(b) : '').join('').trim();
+}
+
+function parseKemperSysex(data){
+  const arr = Array.from(data);
+  const idx = arr.findIndex((b, i) => i === 0 && b === 0xF0);
+  if (idx !== 0) return null;
+  if (arr.slice(0,6).join(',') !== kemperSysexHeader.join(',')) return null;
+  return arr;
+}
+
+let outputPort;
+let currentPresetNumber = null;
+
+async function connectMidi() {
+  midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+
+  const inputs = Array.from(midiAccess.inputs.values());
+  const outputs = Array.from(midiAccess.outputs.values());
+
+  inputPort = inputs[0];
+  outputPort = outputs[0];
+
+  if (!inputPort) throw new Error("No MIDI input found");
+  if (!outputPort) throw new Error("No MIDI output found");
+
+  inputPort.onmidimessage = onMidiMessage;
+
+  $('btnRequestName').disabled = false;
+
+  console.log("Input:", inputPort.name);
+  console.log("Output:", outputPort.name);
+}
+
+function sendRequestPresetName() {
+  const msg = [0xF0, 0x00, 0x20, 0x33, 0x02, 0x7F, 0x43, 0x00, 0x00, 0x01, 0xF7];
+  outputPort.send(msg);
+  console.log("Sent SysEx request");
+}
+
+function onMidiMessage(evt){
+  const data = Array.from(evt.data);
+  log(`MIDI IN: ${data.map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
+
+  // Program Change: [0xC0 + channel, programNumber]
+  if (data.length === 2 && (data[0] & 0xF0) === 0xC0) {
+    currentPresetNumber = data[1] + 1; // MIDI is 0-based, UI is 1-based
+    document.getElementById('presetNumber').textContent = currentPresetNumber;
+    return;
+  }
+
+  // SysEx name response
+  if (data[0] === 0xF0) {
+    const nameBytes = data.filter(b => b >= 32 && b <= 126);
+    const name = String.fromCharCode(...nameBytes).trim();
+    if (name) document.getElementById('presetName').textContent = name;
+  }
+}
+
+$('btnConnect').onclick = connectMidi;
+$('btnRequestName').onclick = sendRequestPresetName;
+$('btnClear').onclick = () => $('log').textContent = '';
+</script>
+
+</body>
+</html>
