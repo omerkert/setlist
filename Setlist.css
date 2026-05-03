@@ -34,7 +34,7 @@ body {
 }
 
 body.performance {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 header {
@@ -102,21 +102,21 @@ button.directBtn:focus {
   transform: translateY(-1px);
 }
 
-button.soloBtn {
+#soloSwitch {
   background: linear-gradient(180deg, #ff5f7f, #ff9147);
   border-color: #ff7f5f;
   box-shadow: 0 12px 20px rgba(255, 95, 127, 0.35);
-  padding: 18px 16px;
-  margin: 10px;
+  padding: 8px 6px;
+  margin: 8px;
   width: 8em;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-button.soloBtn:hover,
-button.soloBtn:focus {
+#soloSwitch:hover,
+#soloSwitch:focus {
   background: linear-gradient(180deg, #ff738c, #ffa56a);
   border-color: #ff8b64;
 }
@@ -140,7 +140,7 @@ button:disabled {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-top: 4px;
+  margin-top: 2px;
   min-width: 200px;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -230,7 +230,7 @@ main {
 
 #setlistGrid {
   display: grid;
-  grid-template-columns: 70% 30%;
+  grid-template-columns: 60% 40%;
   width: 98%;
   gap: 8px;
   margin-bottom: 82px;
@@ -253,7 +253,7 @@ main {
   align-items: center;
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 12px 12px;
+  padding: 4px 8px;
   background: #0e1523;
   margin: 8px 0;
 }
@@ -263,9 +263,7 @@ main {
   background: #222222;
 }
 
-.song.no-pause {
-  border-color: #f4c430;
-}
+/* .song.no-pause { border-color: #f4c430; } */
 
 .song.capo {
   border-color: #b57cff;
@@ -312,22 +310,55 @@ main {
   max-width: none;
 }
 
-.title, .preset {
+.pgm {
+  font-weight: 400;
+  font-size: clamp(1.2rem, 1.6vw + 0.6rem, 2rem);
+  /* font-family: 'Courier New', Courier, monospace; */
+  font-family:'Lucida Sans Typewriter', 'Lucida Typewriter', monospace;
+
+  float:right;
+  color:#6ee7b7;
+  border:2px solid var(--border);
+  border-radius: var(--radius);
+  border-color:#75f0c1;
+  padding:0px 6px 0px 6px;  
+}
+
+.songTitle {
   font-weight: 500;
   /* font-size: 28px; 6vmin */
-  font-size: clamp(1.3rem, 2vw + 1rem, 2.3rem);
+  /* rem = relative unit based on the font size of the <html> root element, typically defaulting to 16px */
+  /*               min     preferred     max  */
+  font-size: clamp(1.5rem, 2vw + 1.2rem, 3rem);
+  /* font-family: 'Courier New', Courier, monospace; */
+  font-family:'Lucida Sans Typewriter', 'Lucida Typewriter', monospace;
+}
+
+.presetTitle {
+  font-weight: 500;
+  /* font-size: 28px; 6vmin */
+  /* rem = relative unit based on the font size of the <html> root element, typically defaulting to 16px */
+  /*               min     preferred     max  */
+  font-size: clamp(1.3rem, 2vw + 0.8rem, 2.5rem);
   /* font-family: 'Courier New', Courier, monospace; */
   font-family:'Lucida Sans Typewriter', 'Lucida Typewriter', monospace;
 }
 
 .preset {
-   float:right;
-   color:#6ee7b7;
-   border:3px solid var(--border);
-   border-radius: var(--radius);
-   border-color:#75f0c1;
-   padding:0px 10px 0px 10px;
-   font-weight:bold
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 4px 8px;
+  background: #0e1523;
+  margin: 8px 0;
+}
+
+.preset.active {
+  outline: 5px solid #2f6ad9;
+  background: #222222;
 }
 
 .meta {
@@ -392,6 +423,19 @@ body.performance .send {
   align-items: center;
 }
 
+.footerBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.footerBtn {
+  padding:2px 12px 2px 12px;
+  margin:4px 4px 4px 4px;
+}
+
 /* Performance mode layout tweaks */
 body.performance header {
   position: fixed;
@@ -415,5 +459,16 @@ hr {
 
 .tb {
   padding:2px 12px 2px 12px;
+  margin:0px 4px 0px 4px;
+}
+
+#presetBankSelectorBar {
+  margin-bottom: 8px;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+
+.presetBankSelector {
+  padding:0px 10px 0px 10px;
   margin:0px 4px 0px 4px;
 }

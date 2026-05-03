@@ -19,28 +19,41 @@
           <div id="setlistOptions"></div>
         </div>
       </div>
-      <span id="inStatus" class="pill warn">No MIDI</span>
-      <span id="outStatus" class="pill warn">No MIDI</span>
 
       <div class="spacer"></div>
 
-      <button id="effectBtn1" class="tb">E 1</button>
-      <button id="effectBtn2" class="tb">E 2</button>
-      <button id="effectBtn3" class="tb">E 3</button>
-      <button id="effectBtn4" class="tb">E 4</button>
-      <button id="tuner"      class="tb" aria-pressed="false"><b>&#9834;</b></button>
+      <div id="modeMenu" class="menu-container">
+        <button id="modeMenuBtn" class="tb" title="Select mode">☰</button>
+        <div id="modeDropdown" class="menu-dropdown" style="display: none;">
+          <div id="modeOptions"></div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <span id="inStatus" class="pill warn">No MIDI</span>
+      <span id="outStatus" class="pill warn">No MIDI</span>
+
+      <!-- <button id="displayModeToggle" class="tb" aria-pressed="false" title="Toggle mode">PRESETS</button> -->
+
+      <div class="spacer"></div>
+
+      <button id="tuner" class="tb" aria-pressed="false"><b>&#9834;</b></button>
+
+      <div class="spacer"></div>
+
+      <button id="soloToggle" class="tb" title="Switch to SOLO PRESET and BACK">SOLO</button>
 
       <div class="spacer"></div>
 
       <button id="zoomOut" class="tb" aria-pressed="false">-</button>
       <button id="zoomIn" class="tb" aria-pressed="false">+</button>
-      <button id="modeToggle" class="tb" aria-pressed="false" title="Toggle mode">⊞</button>
-      <button id="perfToggle" class="tb" aria-pressed="false" title="Toggle Full-Screen Mode">⇗</button>
+      <button id="fullScreenToggle" class="tb" aria-pressed="false" title="Toggle Full-Screen Mode">⇗</button>
     </div>
   </header>
 
   <main>
-    <div id="presetBankSelector" style="display: none; margin-bottom: 14px; margin-top: 6px; padding: 0 14px;"></div>
+    <div id="presetBankSelectorBar" style="display: none;"></div>
     <div id="setlistGrid">
       <section class="card">
         <div id="setlist" class="list"></div>
@@ -53,12 +66,11 @@
   </main>
 
   <div class="footer">
-    <div class="bar">
-        <button id="directBtn1" class="directBtn" aria-pressed="false">...</button>
-        <button id="directBtn2" class="directBtn" aria-pressed="false">...</button>
-        <button id="directBtn3" class="soloBtn" aria-pressed="false">...</button>
-        <button id="directBtn4" class="directBtn" aria-pressed="false">...</button>
-        <button id="directBtn5" class="directBtn" aria-pressed="false">...</button>
+    <div class="footerBar">
+      <button id="effectBtn1" class="footerBtn">E 1</button>
+      <button id="effectBtn2" class="footerBtn">E 2</button>
+      <button id="effectBtn3" class="footerBtn">E 3</button>
+      <button id="effectBtn4" class="footerBtn">E 4</button>
     </div>
   </div>
 

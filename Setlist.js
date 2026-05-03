@@ -1,32 +1,32 @@
+/**
+ * Setlist.js - Main logic for setlist management, MIDI communication, and UI interactions.
+ */
 (function () {
   let midiAccess = null;
   let midiOut = null;
-  let currentIndex = 0;
+
   let presetsAndSetlists = null;
   let currentSetlistIndex = 0;
   const els = {
-    tuner: document.getElementById('tuner'),
-    perfToggle: document.getElementById('perfToggle'),
-    modeToggle: document.getElementById('modeToggle'),
-    outStatus: document.getElementById('outStatus'),
     inStatus: document.getElementById('inStatus'),
+    outStatus: document.getElementById('outStatus'),
+    tuner: document.getElementById('tuner'),
+    fullScreenToggle: document.getElementById('fullScreenToggle'),
+    soloToggle: document.getElementById('soloToggle'),
     setlist: document.getElementById('setlist'),
     notes: document.getElementById('notes'),
+
     setlistMenuBtn: document.getElementById('setlistMenuBtn'),
     setlistDropdown: document.getElementById('setlistDropdown'),
     setlistOptions: document.getElementById('setlistOptions'),
-    presetBankSelector: document.getElementById('presetBankSelector'),
+
+    modeMenuBtn: document.getElementById('modeMenuBtn'),
+    modeDropdown: document.getElementById('modeDropdown'),
+    modeOptions: document.getElementById('modeOptions'),
+
+    presetBankSelectorBar: document.getElementById('presetBankSelectorBar'),
     footer: document.querySelector('.footer'),
 
-    directBtns: [
-			document.getElementById('directBtn1'),
-			document.getElementById('directBtn2'),
-			document.getElementById('directBtn3'),
-			document.getElementById('directBtn4'),
-			document.getElementById('directBtn5')
-		],
-    directMode: undefined,
-    directSelectedIndex: 0,
     soloSelected: false,
 
     effectBtns: [
@@ -38,25 +38,88 @@
   };
 
   let currentSetlist = null;
-  let displayMode = 'setlist'; // 'setlist' or 'preset'
-  let currentPresetBank = 1;
-  let currentPreset = 0;
 
-  // Load setlist from external JSON file using SetlistModels
+  // TODO: add "SONGLIST" mode - list of all sorted songs (only setlist entries, not all presets)
+  const MODE_SETLIST = 'SETLIST', MODE_PRESET = 'PRESET';
+  const displayModes = [ MODE_SETLIST, MODE_PRESET ];
+  let currentDisplayMode = MODE_SETLIST;
+
+  let currentSong = null;
+
+  let currentBank = null;
+  let currentPreset = null;
+
+  let displayModeBeforeSolo = null;
+  let presetBankBeforeSolo = null;
+  let presetIndexBeforeSolo = null;
+
+  // -----------------------------------------------------------------------
+
+  function populateModeMenu() {
+    for (let i = 0; i < displayModes.length; i++) {
+      //console.log("populateModeMenu - adding mode=", displayModes[i]);
+      const btn = document.createElement('button');
+      btn.textContent = displayModes[i];
+      btn.addEventListener('click', () => { changeDisplayMode(displayModes[i]); });
+      els.modeOptions.appendChild(btn);
+    }
+
+    els.modeMenuBtn.textContent = currentDisplayMode;
+
+    els.modeMenuBtn.addEventListener('click', () => {
+      const isOpen = els.modeDropdown.style.display !== 'none';
+      els.modeDropdown.style.display = isOpen ? 'none' : 'block';
+    });
+  }
+
+  function changeDisplayMode(modeName) {
+    //console.log("changeDisplayMode - modeName=", modeName);
+
+    currentDisplayMode = modeName;
+    els.modeMenuBtn.textContent = currentDisplayMode;
+    closeModeMenu();
+    renderSetlistOrPresets();
+
+    if(modeName === MODE_SETLIST) {
+      switchToPreset(currentSong.preset);
+    }
+
+    /*
+    if(currentDisplayMode === MODE_PRESET && !soloChange) {
+      displayModeBeforeSolo = null;
+      const presets = getPresetsForBank(currentPresetBank);
+      if (presets.length > 0) {
+        const preset = presets[currentPresetIndex];
+        const midiPatch = calculateMidiPatch(preset.pgm);
+        const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
+        sendPC(1, prog0, 0);
+      }
+    }
+    */
+  }
+
+  function closeModeMenu() {
+    els.modeDropdown.style.display = 'none';
+  }
+
+  // -----------------------------------------------------------------------
+
   async function loadSetlist() {
     try {
       presetsAndSetlists = await PresetsAndSetlists.loadFromFile('Setlist.json');
       populateSetlistMenu();
-      // Load the first setlist (index 0)
       selectSetlist(0);
+      switchToSong(currentSetlist.firstSong());
+
+      //changeDisplayMode(MODE_PRESET);
+
     } catch (error) {
       console.error('Failed to load setlist:', error);
-      els.setlist.innerHTML = '<p style="color: #ff6b6b;">Error loading setlist!</p>';
+      els.setlist.innerHTML = `<p style="color: #ff6b6b;">Error loading setlist!<br><br>${error.message}</p>`;
     }
   }
 
   function populateSetlistMenu() {
-    if (!presetsAndSetlists) return;
     els.setlistOptions.innerHTML = '';
     const count = presetsAndSetlists.getSetlistCount();
     for (let i = 0; i < count; i++) {
@@ -67,135 +130,103 @@
       btn.addEventListener('click', () => { selectSetlist(i); });
       els.setlistOptions.appendChild(btn);
     }
+    els.setlistMenuBtn.addEventListener('click', () => {
+      const isOpen = els.setlistDropdown.style.display !== 'none';
+      els.setlistDropdown.style.display = isOpen ? 'none' : 'block';
+    });
   }
 
   function selectSetlist(index) {
-    currentSetlistIndex = index;
     currentSetlist = presetsAndSetlists.getSetlist(index);
-    if (!currentSetlist) return;
-    currentIndex = 0;
-    displayMode = 'setlist';
-    els.modeToggle.setAttribute('aria-pressed', 'false');
-    els.modeToggle.textContent = '⊞';
-    applyDirectButtonLabels();
-    render();
+    currentSong = currentSetlist.firstSong();
+    currentDisplayMode = MODE_SETLIST;
+
+    renderSetlistOrPresets();
+
     closeSetlistMenu();
-    updateMenuButtonText();
-  }
 
-  function updateMenuButtonText() {
-    if (currentSetlist) {
-      els.setlistMenuBtn.textContent = currentSetlist.name.substring(0, 10);
-      els.setlistMenuBtn.title = currentSetlist.name;
-    }
-  }
-
-  function toggleSetlistMenu() {
-    const isOpen = els.setlistDropdown.style.display !== 'none';
-    els.setlistDropdown.style.display = isOpen ? 'none' : 'block';
+    els.setlistMenuBtn.textContent = currentSetlist.name.substring(0, 10);
+    els.setlistMenuBtn.title = currentSetlist.name;
   }
 
   function closeSetlistMenu() {
     els.setlistDropdown.style.display = 'none';
   }
 
-  function applyDirectButtonLabels() {
-    const labels = currentSetlist ? currentSetlist.getDirectButtons() : ['CLEAN', 'UN-CLEAN', 'SOLO', 'CRUNCH', 'HI-GAIN'];
-		labels.forEach((label, idx) => {
-    	els.directBtns[idx].textContent = label;
-		});
-  }
+  // -----------------------------------------------------------------------
 
-  function getUniqueBanks() {
-    if (!presetsAndSetlists) return [];
-    const banks = new Set();
-    for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
-      const preset = presetsAndSetlists.getPreset(i);
-      if (preset && preset.pgm) {
-        const bank = parseInt(preset.pgm.split('-')[0], 10);
-        banks.add(bank);
-      }
-    }
-    return Array.from(banks).sort((a, b) => a - b);
-  }
-
-  function getPresetsForBank(bank) {
-    if (!presetsAndSetlists) return [];
-    const result = [];
-    for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
-      const preset = presetsAndSetlists.getPreset(i);
-      if (preset && preset.pgm) {
-        const presetBank = parseInt(preset.pgm.split('-')[0], 10);
-        if (presetBank === bank) {
-          result.push(preset);
-        }
-      }
-    }
-    return result;
-  }
-
-  function renderBankSelector() {
-    els.presetBankSelector.innerHTML = '';
-    const banks = getUniqueBanks();
+  function renderBankSelector(selectedBank) {
+    currentBank = selectedBank;
+    
+    els.presetBankSelectorBar.innerHTML = '';    
+    const banks = presetsAndSetlists.getUniqueBanks();
     const btnContainer = document.createElement('div');
     btnContainer.style.display = 'flex';
     btnContainer.style.gap = '4px';
     btnContainer.style.flexWrap = 'wrap';
     
-    console.log("Rendering bank selector, banks=", banks);
+    //console.log("renderBankSelector - currentPreset.bank=", currentPreset.bank, ", selectedBank=", selectedBank );
 
     banks.forEach(bank => {
       const btn = document.createElement('button');
       btn.textContent = `B-${bank}`;
-      btn.className = 'tb';
-      if (bank === currentPresetBank) {
+      btn.className = 'presetBankSelector';
+      if (bank === selectedBank) {
         btn.setAttribute('aria-pressed', 'true');
         btn.style.outline = '5px solid #cf352e';
       }
       btn.addEventListener('click', () => {
-        currentPresetBank = bank;
-        renderBankSelector();
-        renderPresets();
+        renderBankSelector(bank);
+        renderPresets(bank);
       });
       btnContainer.appendChild(btn);
     });
     
-    els.presetBankSelector.appendChild(btnContainer);
+    els.presetBankSelectorBar.appendChild(btnContainer);
   }
 
-  function renderPresets() {
+  function renderPresets(selectedBank) {
+    //console.log("renderPresets - currentPreset.bank=", currentPreset.bank, ", currentPreset.indexInBank=", currentPreset.indexInBank);
+
     els.setlist.innerHTML = '';
-    const presets = getPresetsForBank(currentPresetBank);
+    const presets = presetsAndSetlists.getPresetsForBank(selectedBank || currentBank);
     
-    presets.forEach((p, idx) => {
+    presets.forEach((preset, idx) => {
       const row = document.createElement('div');
-      row.className = 'song';
-      // Find global index of this preset
-      let globalIdx = -1;
-      for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
-        if (presetsAndSetlists.getPreset(i) === p) {
-          globalIdx = i;
-          break;
-        }
-      }
-      if (globalIdx === currentPreset) {
+      row.className = 'preset';
+      if(currentPreset===preset) {
         row.classList.add('active');
       }
-      row.dataset.idx = String(idx);
+      row.dataset.idx = String(preset.index);
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${p.pgm}</div><div class="title">${p.label}</div>`;
+      info.innerHTML = `<div class='pgm'>${preset.pgm}</div><div class="presetTitle">${preset.label}</div>`;
       row.appendChild(info);
+
+      row.addEventListener('click', () => {
+        switchToPreset(preset);
+      });
+
       els.setlist.appendChild(row);
     });
   }
 
-  function render() {
-    if (displayMode === 'preset') {
-      els.presetBankSelector.style.display = 'block';
-      renderBankSelector();
-      renderPresets();
+  function highlightPreset(rowDiv) {
+    //console.info("highlightPreset - rowDiv=", rowDiv);
+    const nodes = els.setlist.querySelectorAll('.preset');
+    nodes.forEach(n => n.classList.remove('active'));
+    rowDiv.classList.add('active');
+    ensureVisible(rowDiv);
+  }
+
+  /** depending on displayMode render either PRESETs or SETLIST */
+  function renderSetlistOrPresets() {
+    //console.log("render - currentDisplayMode=", currentDisplayMode);
+    if (currentDisplayMode === MODE_PRESET) {
+      els.presetBankSelectorBar.style.display = 'block';
+      renderBankSelector(currentPreset ? currentPreset.bank : 1);
+      renderPresets(currentPreset ? currentPreset.bank : 1);
     } else {
-      els.presetBankSelector.style.display = 'none';
+      els.presetBankSelectorBar.style.display = 'none';
       renderSongs();
     }
   }
@@ -212,7 +243,8 @@
   function setOutStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
     setBadge(els.outStatus, text, cls);
-    setFooterVisible(level === 'ok');
+    //setFooterVisible(level === 'ok');
+    setFooterVisible(true);
   }
   function setInStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
@@ -220,32 +252,24 @@
   }
 
   // map MIDI-Input PC messages to patches
-  function pcToPatch(pc) {
+  function pcToPreset(pc) {
     switch (pc) {
       case 0: // BANK-1 => previous song OR previous direct preset
-        if(els.directMode) {
-          els.directSelectedIndex = (els.directSelectedIndex - 1  + els.directBtns.length - 1) % (els.directBtns.length - 1);
-					if(els.directSelectedIndex === 2) els.directSelectedIndex = 1; // skip SOLO button in direct mode
-          els.directBtns[els.directSelectedIndex].click();
+        if(currentDisplayMode===MODE_PRESET) {
+          presetPrevious();
         } else {
-          patchPrevious();
+          songPrevious();
         }
         return;
       case 1: // BANK-1 => next song OR next direct preset
-        if(els.directMode) {
-          els.directSelectedIndex = (els.directSelectedIndex + 1) % (els.directBtns.length);
-					if(els.directSelectedIndex === 2) els.directSelectedIndex = 3; // skip SOLO button in direct mode
-          els.directBtns[els.directSelectedIndex].click();
+        if(currentDisplayMode===MODE_PRESET) {
+          presetNext();
         } else {
-          patchNext();
+          songNext();
         }
         return;
       case 2: // BANK-1 => MODE => toggle direct mode on/off
-        if(els.directMode) {
-          toPatch(songs[currentIndex], currentIndex);
-        } else {
-          els.directBtns[els.directSelectedIndex].click();
-        }
+        toggleDisplayMode();
         return;
       case 3: // BANK-1 => SOLO => toggle solo patch on/off
         toggleSolo();
@@ -291,7 +315,7 @@
         const status = data[0];
         const data1 = data[1] || 0;
         const statusType = status & 0xF0;
-        if (statusType === 0xC0) pcToPatch(data1);
+        if (statusType === 0xC0) pcToPreset(data1);
       };
     });
   }
@@ -334,43 +358,61 @@
   function sendPC(ch1, prog, whenMs) {
     if (!midiOut) return; const ch0 = (ch1 - 1) & 0x0F; const status = 0xC0 | ch0;
     midiOut.send([status, prog & 0x7F], whenMs ? performance.now() + whenMs : undefined);
+    currentPresetIndex = prog;
   }
 
-  function calculateMidiPatch(presetValue) {
-    const presetStr = String(presetValue);
-    if (presetStr.includes('-')) {
-      const parts = presetStr.split('-');
-      const before = parseInt(parts[0], 10);
-      const after = parseInt(parts[1], 10);
-      return (before-1) * 5 + after;
+  function switchToSong(song) {
+    //console.info("switchToSong - song=", song);
+    currentSong = song;
+    highlightSong();
+    setNotes(song);
+    switchToPreset(song.preset);
+  }
+
+  function switchToPreset(preset) {
+    currentPreset = preset;
+
+    //console.info("switchToPreset - preset=", preset);
+    if(currentDisplayMode === MODE_PRESET) {
+      //console.info("switchToPreset - highlighting preset in UI - preset.index=", preset.index);
+      highlightPreset(els.setlist.querySelector(`.preset[data-idx="${preset.index}"]`));
     }
-    return parseInt(presetStr, 10);
-  }
 
-  function toPatch(song, idx) {
-    if (!midiOut) { setOutStatus('No OUT selected', 'err'); return; }
-    const useBank = true;
-    const oneBased = true;
-    const ch = (song.channel >= 1 && song.channel <= 16) ? song.channel : 1;
-    const preset = song instanceof Song ? song.getPreset() : song.preset;
-    const midiPatch = calculateMidiPatch(preset);
+    const useBank = true, oneBased = true;
+    const ch = (preset.channel >= 1 && preset.channel <= 16) ? preset.channel : 1;
+    const midiPatch = preset.calculatePatchIndex();
     const prog0 = oneBased ? Math.max(0, Math.min(127, midiPatch - 1)) : Math.max(0, Math.min(127, midiPatch));
-    console.info(`useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0}`);
+    //console.info(`switchToPreset(useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0})`);
     let t = 0;
     if (useBank) {
-      if (Number.isInteger(song.bankMSB)) sendCC(ch, 0, song.bankMSB & 0x7F, t);
-      if (Number.isInteger(song.bankLSB)) sendCC(ch, 32, song.bankLSB & 0x7F, t + 4);
+      if (Number.isInteger(preset.bankMSB)) sendCC(ch, 0, preset.bankMSB & 0x7F, t);
+      if (Number.isInteger(preset.bankLSB)) sendCC(ch, 32, preset.bankLSB & 0x7F, t + 4);
       t += 8;
     }
-    sendPC(ch, prog0, t);
-    currentIndex = typeof idx === 'number' ? idx : currentIndex;
-    highlightCurrent();
-    clearDirectButtons()
+    if (midiOut) {
+      sendPC(ch, prog0, t);
+    } else {
+      setOutStatus('No OUT selected', 'err');
+    }    
+    updateEffectButtons(preset);
   }
 
   function setNotes(song) {
     const text = song && song.notes ? song.notes : '';
     els.notes.innerHTML = text;
+  }
+
+  function updateEffectButtons(preset) {
+    for(let i=0; i<els.effectBtns.length; i++) {
+      const btn = els.effectBtns[i];
+      btn.setAttribute('aria-pressed', 'false');
+      btn.style.outline = 'none';
+      if(preset && preset.effectBtns && preset.effectBtns[i]) {
+        btn.innerHTML = `<span class="effect-tag">${preset.effectBtns[i]}</span>`;
+      } else {
+        btn.innerHTML = `E ${i+1}`;
+      }
+    }
   }
 
   function getSongsToRender() {
@@ -390,20 +432,20 @@
       row.className = classes.join(' ');
       row.dataset.idx = String(currentSetlist.songs.indexOf(s));
       const keyLabel = s.key ? `<span class="key-tag">${s.key}</span>` : '';
-      const pauseLabel = s.hasNoPause && s.hasNoPause() ? '<span class="pause-tag">↔ no pause</span>' : '';
+      const pauseLabel = s.hasNoPause && s.hasNoPause() ? '<span class="pause-tag"><b>~</b>pause</span>' : '';
       const capoLabel = s.hasCapo && s.hasCapo() ? `<span class="capo-tag">${s.capo}</span>` : '';
       const info = document.createElement('div');
-      info.innerHTML = `<div class='preset'>${s.getPreset()}</div><div class="title">${s.title}${keyLabel}${pauseLabel}${capoLabel}</div>`;
+      info.innerHTML = `<div class='pgm'>${s.getPreset()}</div><div class="songTitle">${s.title}${keyLabel}${pauseLabel}${capoLabel}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });
-    highlightCurrent();
+    highlightSong();
   }
 
-  function highlightCurrent() {
+  function highlightSong() {
     const nodes = els.setlist.querySelectorAll('.song');
     nodes.forEach(n => n.classList.remove('active'));
-    const active = els.setlist.querySelector(`.song[data-idx="${currentIndex}"]`);
+    const active = els.setlist.querySelector(`.song[data-idx="${currentSong.index}"]`);
     if (active) active.classList.add('active');
     ensureVisible(active);
   }
@@ -417,107 +459,61 @@
     }
   }
 
-  function clearDirectButtons() {
-    els.directBtns.forEach((b) => { 
-      b.style.outline = 'none';
-    });
-    els.directMode = undefined;
-    els.soloSelected = false;
-
-    els.tuner.style.outline = 'none';
-    els.tuner.setAttribute('aria-pressed', 'false');
-
-    els.effectBtns.forEach((btn) => {
-      btn.style.outline = 'none';
-      btn.setAttribute('aria-pressed', 'false');
-    });
-  }
-
-  function selectDirect(activeBtn) {
-    clearDirectButtons()
-    highlightBtn(activeBtn);
-    els.directMode = activeBtn;
-  }
-
   function highlightBtn(btn) {
     btn.style.outline = '5px solid #cf352e';
   }
 
-  function patchPrevious() {
-    if (!currentSetlist || currentSetlist.getSongCount() === 0 || currentIndex === 0) return;
-    currentIndex = (currentIndex - 1 + currentSetlist.getSongCount()) % currentSetlist.getSongCount();
-    toPatch(currentSetlist.getSong(currentIndex), currentIndex);
+  function presetPrevious() {
+    if( currentPreset && currentPreset.prev ) switchToPreset(currentPreset.prev);
   }
 
-  function patchNext() {
-    if (!currentSetlist || currentSetlist.getSongCount() === 0 || currentIndex === currentSetlist.getSongCount() - 1) return;
-    currentIndex = (currentIndex + 1) % currentSetlist.getSongCount();
-    toPatch(currentSetlist.getSong(currentIndex), currentIndex);
+  function presetNext() {
+    if( currentPreset && currentPreset.next ) switchToPreset(currentPreset.next);
   }
 
-  document.getElementById('zoomIn').addEventListener('click', () => {
-    const currSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    document.documentElement.style.fontSize = `${Math.min(32, currSize + 4)}px`;
-  });
+  function songPrevious() {
+    if( currentSong && currentSong.prev ) switchToSong(currentSong.prev);
+  }
 
-  document.getElementById('zoomOut').addEventListener('click', () => {
-    const currSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    document.documentElement.style.fontSize = `${Math.max(8, currSize - 4)}px`;
-  });
+  function songNext() {
+    if( currentSong && currentSong.next ) switchToSong(currentSong.next);
+  }
 
-  els.tuner.addEventListener('click', () => {
-    const on = els.tuner.getAttribute('aria-pressed') === 'true';
-    if (on) {
-      els.tuner.style.outline = 'none';
-      els.tuner.setAttribute('aria-pressed', 'false');
-      sendCC(1, 31, 0);
-    } else {
-      highlightBtn(els.tuner);
-      els.tuner.setAttribute('aria-pressed', 'true');
-      sendCC(1, 31, 127);
-    }
-  });
+  els.soloToggle.addEventListener('click', () => {
+    toggleSolo();
+  });    
 
   function toggleDisplayMode() {
-    displayMode = displayMode === 'setlist' ? 'preset' : 'setlist';
-    els.modeToggle.setAttribute('aria-pressed', displayMode === 'preset');
-    els.modeToggle.textContent = displayMode === 'preset' ? '≡' : '⊞';
-    render();
+    const newMode = currentDisplayMode === MODE_SETLIST ? MODE_PRESET : MODE_SETLIST;
+    changeDisplayMode(newMode);
   }
 
-  els.modeToggle.addEventListener('click', toggleDisplayMode);
-
-
-  // Performance mode button (also tries fullscreen)
-  els.perfToggle.addEventListener('click', async () => {
-    const on = document.body.classList.toggle('performance');
-    els.perfToggle.setAttribute('aria-pressed', on);
-    els.perfToggle.textContent = on ? '⇙' : '⇗';
-    try {
-      if (on && document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      } else if (!on && document.fullscreenElement && document.exitFullscreen) {
-        await document.exitFullscreen();
-      }
-    } catch { }
-  });
-
   function toggleSolo() {
-    //console.info('Toggling SOLO patch, soloSelected=', els.soloSelected, ", directSelected=", els.directSelected);
-    if(els.soloSelected) {
-      els.directBtns[2].style.outline = 'none';
-      if(els.directMode) {
-        els.directMode.click();
-      } else {
-        toPatch(currentSetlist.getSong(currentIndex), currentIndex);
+    console.log("Toggling SOLO, currentPreset=", currentPreset.pgm, "soloPreset=", currentSetlist ? currentSetlist.soloPreset : null, ", displayModeBeforeSolo=", displayModeBeforeSolo);
+    let isSoloSelected = displayModeBeforeSolo!==null;
+    if(isSoloSelected) {
+      // switch back to either SONG or PRESET that was selected when SOLO was pressed
+      if(displayModeBeforeSolo !== currentDisplayMode) {
+        toggleDisplayMode();
       }
-      els.soloSelected = false;
+      if(currentDisplayMode === MODE_PRESET) {
+        switchToPreset(currentPreset);
+      } else {
+        switchToSong(currentSong);
+      }
+      displayModeBeforeSolo = null;
     } else {
-      els.directBtns.forEach((b) => { b.style.outline = 'none'; });
-      highlightBtn(els.directBtns[2]);
-      const directPcOffset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0;
-      sendPC(1, directPcOffset+2, 8);
-      els.soloSelected = true;
+      // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
+      displayModeBeforeSolo = currentDisplayMode;
+
+      if(currentDisplayMode === MODE_PRESET) { 
+        presetBankBeforeSolo = currentPresetBank;
+        presetIndexBeforeSolo = currentPresetIndex;
+      }
+      if(currentDisplayMode !== MODE_PRESET) { 
+        toggleDisplayMode(true);
+      }
+      switchToPreset(currentSetlist ? currentSetlist.soloPreset : null);
     }
   }
 
@@ -540,23 +536,6 @@
     btn.addEventListener('click', () => { toggleEffectButton(btn, 75+i); });
   });
 
-  els.setlistMenuBtn.addEventListener('click', toggleSetlistMenu);
-
-  // Close menu when clicking outside
-  document.addEventListener('click', (ev) => {
-    if (!els.setlistMenuBtn.contains(ev.target) && !els.setlistDropdown.contains(ev.target)) {
-      closeSetlistMenu();
-    }
-  });
-
-  els.directBtns[0].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+0, 8); selectDirect(els.directBtns[0]); });
-  els.directBtns[1].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+1, 8); selectDirect(els.directBtns[1]); });
-
-  els.directBtns[2].addEventListener('click', () => { toggleSolo(); });
-	
-  els.directBtns[3].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+3, 8); selectDirect(els.directBtns[3]); });
-  els.directBtns[4].addEventListener('click', () => { const offset = currentSetlist ? currentSetlist.getDirectPcOffset() : 0; sendPC(1, offset+4, 8); selectDirect(els.directBtns[4]); });
-
   // Prevent accidental zoom on double tap
   let lastTouch = 0;
   document.addEventListener('touchend', (e) => {
@@ -565,37 +544,35 @@
     lastTouch = now;
   }, { passive: false });
 
-  // Delegate clicks from setlist to a single handler (works for both setlist and preset modes)
   els.setlist.addEventListener('click', (ev) => {
+    //console.log("Setlist clicked - currentDisplayMode=", currentDisplayMode);
+
     const row = ev.target.closest('.song');
     if (!row) return;
     const idx = Number(row.getAttribute('data-idx'));
     
-    if (displayMode === 'preset') {
-      const presets = getPresetsForBank(currentPresetBank);
-      const preset = presets[idx];
-      if (preset) {
-        // Find global index of this preset
-        for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
-          if (presetsAndSetlists.getPreset(i) === preset) {
-            currentPreset = i;
-            break;
-          }
-        }
-        const midiPatch = calculateMidiPatch(preset.pgm);
-        const prog0 = Math.max(0, Math.min(127, midiPatch - 1));
-        sendPC(1, prog0, 0);
-        renderPresets();
-      }
+    if (currentDisplayMode === MODE_SETLIST) {
+      switchToSong(currentSetlist.getSong(idx), idx);
     } else {
-      const s = currentSetlist ? currentSetlist.getSong(idx) : null;
-      if (!s) return;
-      setNotes(s);
-      toPatch(s, idx);
+      // TODO presets already have their own click listeners,
+      // replace the global handler with individual ones per song as well
     }
   });
 
+  populateModeMenu();
+
   loadSetlist();
+
+  // close menus when clicking outside
+  document.addEventListener('click', (ev) => {
+    if (!els.modeMenuBtn.contains(ev.target) && !els.modeDropdown.contains(ev.target)) {
+      closeModeMenu();
+    }
+
+    if (!els.setlistMenuBtn.contains(ev.target) && !els.setlistDropdown.contains(ev.target)) {
+      closeSetlistMenu();
+    }
+  });
 
   // Android back button shouldn't exit fullscreen mid-show accidentally
   document.addEventListener('keydown', (e) => {
@@ -607,7 +584,7 @@
 
   // Keyboard navigation for presets (only in preset mode)
   document.addEventListener('keydown', (e) => {
-    if (displayMode === 'preset' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (currentDisplayMode === MODE_PRESET && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       e.stopPropagation();
       const presets = getPresetsForBank(currentPresetBank);
@@ -622,7 +599,7 @@
             break;
           }
         }
-        if (globalIdx === currentPreset) {
+        if (globalIdx === currentPresetIndex) {
           currentBankIdx = i;
           break;
         }
@@ -642,7 +619,7 @@
         const newPreset = presets[newBankIdx];
         for (let i = 0; i < presetsAndSetlists.getPresetCount(); i++) {
           if (presetsAndSetlists.getPreset(i) === newPreset) {
-            currentPreset = i;
+            currentPresetIndex = i;
             break;
           }
         }
@@ -654,6 +631,47 @@
     }
   });
 
-  enableMIDI();
+  // --------------------------------------------------------------------------
+
+  els.tuner.addEventListener('click', () => {
+    const on = els.tuner.getAttribute('aria-pressed') === 'true';
+    if (on) {
+      els.tuner.style.outline = 'none';
+      els.tuner.setAttribute('aria-pressed', 'false');
+      sendCC(1, 31, 0);
+    } else {
+      highlightBtn(els.tuner);
+      els.tuner.setAttribute('aria-pressed', 'true');
+      sendCC(1, 31, 127);
+    }
+  });
+
+  document.getElementById('zoomIn').addEventListener('click', () => {
+    const currSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    document.documentElement.style.fontSize = `${Math.min(32, currSize + 4)}px`;
+  });
+
+  document.getElementById('zoomOut').addEventListener('click', () => {
+    const currSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    document.documentElement.style.fontSize = `${Math.max(8, currSize - 4)}px`;
+  });
+
+  // Performance mode button (also tries fullscreen)
+  els.fullScreenToggle.addEventListener('click', async () => {
+    const on = document.body.classList.toggle('performance');
+    els.fullScreenToggle.setAttribute('aria-pressed', on);
+    els.fullScreenToggle.textContent = on ? '⇙' : '⇗';
+    try {
+      if (on && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      } else if (!on && document.fullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch { }
+  });
+
+  // --------------------------------------------------------------------------
+
+  enableMIDI();  
 
 })();

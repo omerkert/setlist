@@ -1,8 +1,8 @@
 {
   "presets": [
-    { "pgm": "1-1", "label": "AC20 CLN CMP",    "effectBtns": [ "BO>", ">BO", "CHO", "DLY" ] },
+    { "pgm": "1-1", "label": "AC20 CLN CMP",    "effectBtns": [ "BOO-PRE", "BOO-POST", "CHR", "DLY" ] },
     { "pgm": "1-2", "label": "AC20 CLN",        "effectBtns": [ "E1", "E2", "E3", "E4" ] },
-    { "pgm": "1-3", "label": "AC20 SOLO",       "effectBtns": [ "E1", "E2", "E3", "E4" ] },
+    { "pgm": "1-3", "label": "AC20 SOLO",       "effectBtns": [ "SOLO-E1", "SOLO-E2", "SOLO-E3", "SOLO-E4" ] },
     { "pgm": "1-4", "label": "AC20 UCL",        "effectBtns": [ "E1", "E2", "E3", "E4" ] },
     { "pgm": "1-5", "label": "AC20 CRU",        "effectBtns": [ "E1", "E2", "E3", "E4" ] },
 
@@ -62,39 +62,10 @@
   ],
   "setlists": [
 
-    {
-      "name": "UJ BRUGG",
-      "cfg": {
-        "directPcOffset": 0,
-        "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH"]
-      },
-      "songs": [
-        { "title": "Love Foolosophy", "pgm": "1-1" },        
-        { "title": "Mercy", "pgm": "1-4" },
-        { "title": "Deja Vu", "pgm": "1-1", "no-pause" : 1 },
-        { "title": "Man in the mirror", "pgm": "1-2" },
-        { "title": "So easy to fall", "pgm": "1-1" },
-        { "title": "Kiss", "pgm": "1-4" },
-        { "title": "Let me love you", "pgm": "2-1" },
-        { "title": "I feel it coming", "pgm": "1-1", "no-pause" : 1 },
-        { "title": "About Damn Time", "pgm": "1-1" },   
-        { "title": "Sweet 7 Nation", "pgm": "2-4" },
-        { "title": "Sing it back", "pgm": "1-1" },
-        { "title": "Don't Start Now", "pgm": "2-3" },
-        { "title": "APT", "pgm": "1-5", "no-pause" : 1 },
-        { "title": "Falling for you", "pgm": "1-2" },
-        { "title": "I'm Outta Love", "pgm": "1-1" },
-        { "title": "Lost in Music", "pgm": "1-1" },
-        { "title": "Freedom", "pgm": "1-2" },
-        { "title": "Hard To Handle", "pgm": "1-4"}
-      ]
-    },
-
         {
       "name": "UJ ITALY",
       "cfg": {
-        "directPcOffset": 0,
-        "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH"]
+        "soloPreset": "1-3"
       },
       "songs": [
         { "title": "Love Foolosophy", "pgm": "1-1" },
@@ -103,18 +74,17 @@
         { "title": "Valerie", "pgm": "1-2" },
         { "title": "The Door", "pgm": "3-1"},
         { "title": "Crazy", "pgm": "1-1" },
-        { "title": "Rolling in the deep", "pgm": "1-4" },
-        { "title": "Thank you next", "pgm": "1-1" },
         { "title": "I want you back", "pgm": "1-1" },
+        { "title": "The way you make", "pgm": "1-1", "no-pause" : 1 },
         { "title": "Man in the mirror", "pgm": "1-2" },
-        { "title": "The way you make me", "pgm": "1-1" },
+        { "title": "Rolling the deep", "pgm": "1-4" },
+        { "title": "Thank you next", "pgm": "1-1" },
         { "title": "Don't know why", "pgm": "2-5", "capo": "III" },
         { "title": "So easy to fall", "pgm": "1-1" },
         { "title": "Kiss", "pgm": "1-4" },
         { "title": "Let me love you", "pgm": "2-1" },
         { "title": "I feel it coming", "pgm": "1-1" },
         { "title": "About Damn Time", "pgm": "1-1" },   
-        { "title": "Freedom! 90", "pgm": "1-2" },
         { "title": "Flowers", "pgm": "1-1" },
         { "title": "Sweet 7 Nation", "pgm": "2-4", "no-pause" : 1 },
         { "title": "Sing it back", "pgm": "1-1" },
@@ -124,6 +94,34 @@
         { "title": "Falling for you", "pgm": "1-2" },
         { "title": "I'm Outta Love", "pgm": "1-1" },
         { "title": "Lost in Music", "pgm": "1-1" },
+        { "title": "Freedom! 90", "pgm": "1-2" },
+        { "title": "Hard To Handle", "pgm": "1-4"}
+      ]
+    },
+
+    {
+      "name": "UJ 1h",
+      "cfg": {
+        "soloPreset": "1-3"
+      },
+      "songs": [
+        { "title": "Love Foolosophy", "pgm": "1-1" },        
+        { "title": "Mercy", "pgm": "1-4" },
+        { "title": "Deja Vu", "pgm": "1-1", "no-pause" : 1 },
+        { "title": "Man in the mirror", "pgm": "1-2" },
+        { "title": "So easy to fall", "pgm": "1-1" },
+        { "title": "Kiss", "pgm": "1-4" },
+        { "title": "Let me love you", "pgm": "2-1" },
+        { "title": "I feel it coming", "pgm": "1-1" },
+        { "title": "About Damn Time", "pgm": "1-1" },   
+        { "title": "Sweet 7 Nation", "pgm": "2-4" },
+        { "title": "Sing it back", "pgm": "1-1" },
+        { "title": "Don't Start Now", "pgm": "2-3" },
+        { "title": "APT", "pgm": "1-5", "no-pause" : 1 },
+        { "title": "Flowers", "pgm": "1-1" },
+        { "title": "I'm Outta Love", "pgm": "1-1" },
+        { "title": "Lost in Music", "pgm": "1-1" },
+        { "title": "Freedom", "pgm": "1-2" },
         { "title": "Hard To Handle", "pgm": "1-4"}
       ]
     },
@@ -131,8 +129,7 @@
     {
       "name": "CN APRIL",
       "cfg": {
-        "directPcOffset": 0,
-        "directButtons": [ "Clean CMP", "Clean", "SOLO", "UN-Clean", "CRUNCH" ]
+        "soloPreset": "10-3"
       },
       "songs": [
         { "title": "Down Down",               "pgm": "11-4" },
