@@ -66,3 +66,8 @@
 * Right-click your USB Root Hubs > Properties > Power Management
 * Uncheck "Allow the computer to turn off this device to save power."
 
+
+# NEXT / TODO
+
+* SOLO mode is not working properly, yet - test with upper banks in SETLIST + any bank in PRESET mode
+* add SONGLIST mode

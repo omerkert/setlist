@@ -50,8 +50,7 @@
   let currentPreset = null;
 
   let displayModeBeforeSolo = null;
-  let presetBankBeforeSolo = null;
-  let presetIndexBeforeSolo = null;
+  let presetBeforeSolo = null;
 
   // -----------------------------------------------------------------------
 
@@ -497,23 +496,28 @@
         toggleDisplayMode();
       }
       if(currentDisplayMode === MODE_PRESET) {
-        switchToPreset(currentPreset);
+        switchToPreset(presetBeforeSolo);
       } else {
         switchToSong(currentSong);
       }
       displayModeBeforeSolo = null;
+      presetBeforeSolo = null;
+
+      els.soloToggle.classList.remove('active');
+
     } else {
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
       displayModeBeforeSolo = currentDisplayMode;
 
       if(currentDisplayMode === MODE_PRESET) { 
-        presetBankBeforeSolo = currentPresetBank;
-        presetIndexBeforeSolo = currentPresetIndex;
+        presetBeforeSolo = currentPreset;
       }
+      switchToPreset(currentSetlist.soloPreset);
       if(currentDisplayMode !== MODE_PRESET) { 
         toggleDisplayMode(true);
       }
-      switchToPreset(currentSetlist ? currentSetlist.soloPreset : null);
+      // TODO check why SOLO is not show ACTIVE
+      els.soloToggle.classList.add('active');
     }
   }
 

@@ -102,23 +102,28 @@ button.directBtn:focus {
   transform: translateY(-1px);
 }
 
-#soloSwitch {
-  background: linear-gradient(180deg, #ff5f7f, #ff9147);
-  border-color: #ff7f5f;
+#soloToggle {
+  background: linear-gradient(180deg, #880f2f, #ff9147);
+  border-color: #aa5f3f;
   box-shadow: 0 12px 20px rgba(255, 95, 127, 0.35);
-  padding: 8px 6px;
+  padding: 8px 4px;
   margin: 8px;
   width: 8em;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-#soloSwitch:hover,
-#soloSwitch:focus {
-  background: linear-gradient(180deg, #ff738c, #ffa56a);
+#soloToggle:hover,
+#soloToggle:focus {
+  background: linear-gradient(180deg, #ff9147, #880f2f);
   border-color: #ff8b64;
+}
+
+#soloToggle:active {
+  border: #ff7f5f 4px solid;
+  /* transform: translateY(1px); */
 }
 
 button:active {
