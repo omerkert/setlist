@@ -69,5 +69,5 @@
 
 # NEXT / TODO
 
-* SOLO mode is not working properly, yet - test with upper banks in SETLIST + any bank in PRESET mode
-* add SONGLIST mode
+* test SOLO mode thoroughly
+* add SONGLIST mode (SETLIST => PRESETS => SONGLIST) / all songs, alphabetically

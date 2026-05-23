@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MIDI Bluetooth Devices</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:16px}
+    button{margin-right:8px}
+    .box{margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:6px}
+    ul{margin:6px 0 0 18px}
+    .log{white-space:pre-wrap;font-family:monospace;background:#f8f8f8;padding:8px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <h1>MIDI & Bluetooth MIDI Devices</h1>
+
+  <div>
+    <button id="btnRequestMidi">Request Web MIDI Access</button>
+    <button id="btnScanBluetooth">Scan Bluetooth MIDI Device</button>
+  </div>
+
+  <div class="box">
+    <strong>Web MIDI Inputs</strong>
+    <div id="midiInputs">(none)</div>
+  </div>
+
+  <div class="box">
+    <strong>Web MIDI Outputs</strong>
+    <div id="midiOutputs">(none)</div>
+  </div>
+
+  <div class="box">
+    <strong>Send MIDI (Program / Control)</strong>
+    <div style="margin-top:8px">
+      <label>Output: <select id="outputSelect"><option value="">(choose Web MIDI output)</option></select></label>
+      <label style="margin-left:12px">Channel: <input id="midiChannel" type="number" min="1" max="16" value="1" style="width:60px"/></label>
+    </div>
+
+    <div style="margin-top:8px">
+      <fieldset style="display:inline-block;padding:8px;border-radius:6px">
+        <legend>Program Change</legend>
+        <label>Program (0-127): <input id="pcNumber" type="number" min="0" max="127" value="0" style="width:80px"/></label>
+        <button id="sendPC">Send PC</button>
+      </fieldset>
+
+      <fieldset style="display:inline-block;padding:8px;margin-left:12px;border-radius:6px">
+        <legend>Control Change</legend>
+        <label>Controller (0-127): <input id="ccNumber" type="number" min="0" max="127" value="1" style="width:80px"/></label>
+        <label style="margin-left:8px">Value (0-127): <input id="ccValue" type="number" min="0" max="127" value="127" style="width:80px"/></label>
+        <button id="sendCC">Send CC</button>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="box">
+    <strong>Bluetooth MIDI Devices (selected)</strong>
+    <div id="btDevices">(none)</div>
+  </div>
+
+  <div class="box">
+    <strong>Log</strong>
+    <div id="log" class="log">Ready.</div>
+  </div>
+
+  <script src="midiDevices.js"></script>
+</body>
+</html>
