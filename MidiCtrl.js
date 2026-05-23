@@ -15,6 +15,7 @@ class MidiCtrl {
       'MidiPort',       // M-VAVE Chocolate via USB-dongle
       'loopMIDI Port'   // M-VAVE Chocolate via Bluetooth+loopMidi+midiBerry on Windows Tablet
     ];
+
   }
 
   async enableMIDI() {
@@ -27,8 +28,7 @@ class MidiCtrl {
       this.setOutStatus('Requesting MIDI', 'warn');
       this.midiAccess = await navigator.requestMIDIAccess({ sysex: false });
       this.midiAccess.onstatechange = () => this.onStateChange();
-      this.attachInputListeners();
-      this.refreshMidiOut();
+      this.onStateChange(); // initial setup
     } catch (e) {
       console.error(e);
       this.setOutStatus('Permission denied', 'err');
@@ -36,13 +36,12 @@ class MidiCtrl {
   }
 
   onStateChange() {
-    this.refreshMidiOut();
     this.attachInputListeners();
+    this.refreshMidiOut();
   }
 
   attachInputListeners() {
-    if (!this.midiAccess) return;
-    //Array.from(this.midiAccess.inputs.values()).forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
+    Array.from(this.midiAccess.inputs.values()).forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
     const inputs = Array.from(this.midiAccess.inputs.values().filter((midiInput) => this.MIDI_INPUT_NAMES.includes(midiInput.name)));
     if (inputs.length === 0) {
       this.setInStatus('NO MIDI-IN', 'warn');
@@ -50,7 +49,7 @@ class MidiCtrl {
     }
 
     inputs.forEach((input) => {
-      console.log(`MIDI-input => ${input.name}`);
+      //console.log(`MIDI-input FILTERED => ${input.name}`);
       this.setInStatus(`${input.name}`, input.state === 'connected' ? 'ok' : 'warn');
       // Web MIDI API: onmidimessage is the standard way
       input.onmidimessage = (event) => {
@@ -65,9 +64,13 @@ class MidiCtrl {
   }
 
   refreshMidiOut() {
+    console.log('Refreshing MIDI output devices...');
     const outputs = this.midiAccess ? Array.from(this.midiAccess.outputs.values()) : [];
-    this.midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || outputs[0] || null;
-    this.setOutStatus(this.midiOut ? this.midiOut.name : 'NO MIDI-OUT', this.midiOut ? 'ok' : 'warn');
+    this.midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || null;
+  }
+
+  hasOutput() {
+    return !!this.midiOut;
   }
 
   sendCC(ch1, cc, val, whenMs) {
@@ -80,5 +83,4 @@ class MidiCtrl {
     if (!this.midiOut) return; const ch0 = (ch1 - 1) & 0x0F; const status = 0xC0 | ch0;
     this.midiOut.send([status, prog & 0x7F], whenMs ? performance.now() + whenMs : undefined);
   }
-}</content>
-<parameter name="filePath">c:\Users\olafm\G-Drive\musical\setlist\MidiCtrl.js
+}

@@ -2,8 +2,7 @@
  * Setlist.js - Main logic for setlist management, MIDI communication, and UI interactions.
  */
 (function () {
-  let midiAccess = null;
-  let midiOut = null;
+  let currentPresetIndex = null;
 
   let presetsAndSetlists = null;
   let currentSetlistIndex = 0;
@@ -289,75 +288,11 @@
     }
   }
 
-  // we only look for ONE specific midi input device
-  const MIDI_INPUT_NAMES = [
-    'loopMIDI Port',  // M-VAVE Chocolate via Bluetooth+loopMidi+midiBerry on Windows Tablet
-    'MidiPort'        // M-VAVE Chocolate via USB-Dongle on Windows PC
-  ];
-
-  function attachInputListeners() {
-    if (!midiAccess) return;
-    //Array.from(midiAccess.inputs.values()).forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
-    const inputs = Array.from(midiAccess.inputs.values().filter((midiInput) => MIDI_INPUT_NAMES.includes(midiInput.name)));
-    if (inputs.length === 0) {
-      setInStatus('NO MIDI-IN', 'warn');
-      return;
-    }
-
-    inputs.forEach((input) => {
-      console.log(`MIDI-input => ${input.name}`);
-      setInStatus(`${input.name}`, input.state === 'connected' ? 'ok' : 'warn');
-      // Web MIDI API: onmidimessage is the standard way
-      input.onmidimessage = (event) => {
-        const data = event.data;
-        if (!data || data.length < 1) return;
-        const status = data[0];
-        const data1 = data[1] || 0;
-        const statusType = status & 0xF0;
-        if (statusType === 0xC0) pcToPreset(data1);
-      };
-    });
-  }
-
-  function refreshMidiOut() {
-    const outputs = midiAccess ? Array.from(midiAccess.outputs.values()) : [];
-    midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || outputs[0] || null;
-    setOutStatus(midiOut ? midiOut.name : 'NO MIDI-OUT', midiOut ? 'ok' : 'warn');
-  }
-
-  function onStateChange() { 
-    refreshMidiOut();
-    attachInputListeners();
-  }
-
-  async function enableMIDI() {
-    console.info
-    if (!('requestMIDIAccess' in navigator)) {
-      setOutStatus('MIDI UNSUPPORTED', 'err');
-      alert('This browser does not support Web MIDI. Use Chrome or Edge on desktop/tablet.');
-      return;
-    }
-    try {
-      setOutStatus('Requesting MIDI', 'warn');
-      midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-      midiAccess.onstatechange = onStateChange;
-      attachInputListeners();
-      refreshMidiOut();
-    } catch (e) {
-      console.error(e);
-      setOutStatus('Permission denied', 'err');
-    }
-  }
-
   function sendCC(ch1, cc, val, whenMs) {
-    if (!midiOut) return; 
-    const ch0 = (ch1 - 1) & 0x0F; const status = 0xB0 | ch0;
-    midiOut.send([status, cc & 0x7F, val & 0x7F], whenMs ? performance.now() + whenMs : undefined);
+    midiCtrl.sendCC(ch1, cc, val, whenMs);
   }
   function sendPC(ch1, prog, whenMs) {
-    if (!midiOut) return; const ch0 = (ch1 - 1) & 0x0F; const status = 0xC0 | ch0;
-    midiOut.send([status, prog & 0x7F], whenMs ? performance.now() + whenMs : undefined);
-    currentPresetIndex = prog;
+    midiCtrl.sendPC(ch1, prog, whenMs);
   }
 
   function switchToSong(song) {
@@ -381,6 +316,7 @@
     const ch = (preset.channel >= 1 && preset.channel <= 16) ? preset.channel : 1;
     const midiPatch = preset.calculatePatchIndex();
     const prog0 = oneBased ? Math.max(0, Math.min(127, midiPatch - 1)) : Math.max(0, Math.min(127, midiPatch));
+    currentPresetIndex = preset.index;
     //console.info(`switchToPreset(useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0})`);
     let t = 0;
     if (useBank) {
@@ -388,10 +324,10 @@
       if (Number.isInteger(preset.bankLSB)) sendCC(ch, 32, preset.bankLSB & 0x7F, t + 4);
       t += 8;
     }
-    if (midiOut) {
+    if (midiCtrl && midiCtrl.hasOutput()) {
       sendPC(ch, prog0, t);
     } else {
-      setOutStatus('No OUT selected', 'err');
+      setOutStatus('NO OUT', 'err');
     }    
     updateEffectButtons(preset);
   }
@@ -504,6 +440,7 @@
       presetBeforeSolo = null;
 
       els.soloToggle.classList.remove('active');
+      els.soloToggle.setAttribute('aria-pressed', 'false');
 
     } else {
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
@@ -516,8 +453,8 @@
       if(currentDisplayMode !== MODE_PRESET) { 
         toggleDisplayMode(true);
       }
-      // TODO check why SOLO is not show ACTIVE
       els.soloToggle.classList.add('active');
+      els.soloToggle.setAttribute('aria-pressed', 'true');
     }
   }
 
@@ -562,6 +499,8 @@
       // replace the global handler with individual ones per song as well
     }
   });
+
+  const midiCtrl = new MidiCtrl(pcToPreset, setInStatus, setOutStatus);
 
   populateModeMenu();
 
@@ -676,6 +615,6 @@
 
   // --------------------------------------------------------------------------
 
-  enableMIDI();  
+  midiCtrl.enableMIDI();
 
 })();

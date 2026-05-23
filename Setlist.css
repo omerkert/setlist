@@ -44,7 +44,7 @@ header {
   background: rgba(11, 15, 22, .9);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
-  padding: 10px var(--pad);
+  padding: 2px var(--pad);
 }
 
 .bar {
@@ -119,6 +119,14 @@ button.directBtn:focus {
 #soloToggle:focus {
   background: linear-gradient(180deg, #ff9147, #880f2f);
   border-color: #ff8b64;
+}
+
+#soloToggle.active {
+  background: linear-gradient(180deg, #ffcc70, #ff5c45);
+  border-color: #ffd59d;
+  box-shadow: 0 0 0 4px rgba(255, 173, 90, 0.35), 0 16px 28px rgba(255, 115, 65, 0.25);
+  transform: scale(1.03);
+  color: #ffd59d;
 }
 
 #soloToggle:active {
@@ -450,7 +458,7 @@ body.performance header {
 }
 
 body.performance main {
-  margin-top: 64px;
+  margin-top: 70px;
 }
 
 .big-toggle {
