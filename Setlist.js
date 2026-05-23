@@ -306,8 +306,10 @@
   function switchToPreset(preset) {
     currentPreset = preset;
 
-    //console.info("switchToPreset - preset=", preset);
-    if(currentDisplayMode === MODE_PRESET) {
+    if (currentDisplayMode === MODE_PRESET) {
+      currentBank = preset.bank;
+      renderBankSelector(currentBank);
+      renderPresets(currentBank);
       //console.info("switchToPreset - highlighting preset in UI - preset.index=", preset.index);
       highlightPreset(els.setlist.querySelector(`.preset[data-idx="${preset.index}"]`));
     }
@@ -326,9 +328,7 @@
     }
     if (midiCtrl && midiCtrl.hasOutput()) {
       sendPC(ch, prog0, t);
-    } else {
-      setOutStatus('NO OUT', 'err');
-    }    
+    }
     updateEffectButtons(preset);
   }
 
@@ -424,7 +424,7 @@
   }
 
   function toggleSolo() {
-    console.log("Toggling SOLO, currentPreset=", currentPreset.pgm, "soloPreset=", currentSetlist ? currentSetlist.soloPreset : null, ", displayModeBeforeSolo=", displayModeBeforeSolo);
+    //console.log("Toggling SOLO, currentPreset=", currentPreset.pgm, "soloPreset=", currentSetlist ? currentSetlist.soloPreset : null, ", displayModeBeforeSolo=", displayModeBeforeSolo);
     let isSoloSelected = displayModeBeforeSolo!==null;
     if(isSoloSelected) {
       // switch back to either SONG or PRESET that was selected when SOLO was pressed
@@ -459,14 +459,14 @@
   }
 
   function toggleEffectButton(btn, ccNum) {
-    console.log("toggleEffectButton - ", btn.getAttribute('aria-pressed'));
+    //console.log("toggleEffectButton - ", btn.getAttribute('aria-pressed'));
     if (btn.getAttribute('aria-pressed') === 'true') {
-      console.log("Turning OFF effect for CC#", ccNum);
+      //console.log("Turning OFF effect for CC#", ccNum);
       btn.setAttribute('aria-pressed', 'false');
       btn.style.outline = 'none';
       sendCC(1, ccNum, 0);
     } else {
-      console.log("Turning ON effect for CC#", ccNum);
+      //console.log("Turning ON effect for CC#", ccNum);
       btn.setAttribute('aria-pressed', 'true');
       highlightBtn(btn);
       sendCC(1, ccNum, 1);

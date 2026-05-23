@@ -41,32 +41,44 @@ class MidiCtrl {
   }
 
   attachInputListeners() {
-    Array.from(this.midiAccess.inputs.values()).forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
-    const inputs = Array.from(this.midiAccess.inputs.values().filter((midiInput) => this.MIDI_INPUT_NAMES.includes(midiInput.name)));
+    if (!this.midiAccess) return;
+
+    const allInputs = Array.from(this.midiAccess.inputs.values());
+    //allInputs.forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
+
+    let inputs = allInputs.filter((midiInput) => this.MIDI_INPUT_NAMES.some((name) => midiInput.name.includes(name)));
+
     if (inputs.length === 0) {
       this.setInStatus('NO MIDI-IN', 'warn');
       return;
     }
 
     inputs.forEach((input) => {
-      //console.log(`MIDI-input FILTERED => ${input.name}`);
+      //console.log(`MIDI-input ATTACH => ${input.name}`);
       this.setInStatus(`${input.name}`, input.state === 'connected' ? 'ok' : 'warn');
-      // Web MIDI API: onmidimessage is the standard way
-      input.onmidimessage = (event) => {
-        const data = event.data;
-        if (!data || data.length < 1) return;
-        const status = data[0];
-        const data1 = data[1] || 0;
-        const statusType = status & 0xF0;
-        if (statusType === 0xC0) this.onPC(data1);
-      };
+      input.onmidimessage = (event) => this.handleMidiMessage(event);
     });
   }
 
+  handleMidiMessage(event) {
+    //console.log('MIDI message received:', event.data);
+    const data = event.data;
+    if (!data || data.length < 1) return;
+    const status = data[0];
+    const data1 = data[1] || 0;
+    const statusType = status & 0xF0;
+    if (statusType === 0xC0) this.onPC(data1);
+  }
+
   refreshMidiOut() {
-    console.log('Refreshing MIDI output devices...');
+    //console.log('Refreshing MIDI output devices...');
     const outputs = this.midiAccess ? Array.from(this.midiAccess.outputs.values()) : [];
     this.midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || null;
+    if(this.midiOut) {
+      this.setOutStatus(this.midiOut.name, 'ok');
+    } else {
+      this.setOutStatus('NO OUT', 'err');
+    }
   }
 
   hasOutput() {
