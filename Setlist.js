@@ -14,6 +14,7 @@
     soloToggle: document.getElementById('soloToggle'),
     setlist: document.getElementById('setlist'),
     notes: document.getElementById('notes'),
+    setlistGrid: document.getElementById('setlistGrid'),
 
     setlistMenuBtn: document.getElementById('setlistMenuBtn'),
     setlistDropdown: document.getElementById('setlistDropdown'),
@@ -39,8 +40,8 @@
   let currentSetlist = null;
 
   // TODO: add "SONGLIST" mode - list of all sorted songs (only setlist entries, not all presets)
-  const MODE_SETLIST = 'SETLIST', MODE_PRESET = 'PRESET';
-  const displayModes = [ MODE_SETLIST, MODE_PRESET ];
+  const MODE_SETLIST = 'SETLIST', MODE_PRESET = 'PRESET', MODE_CARDS = 'CARDS';
+  const displayModes = [ MODE_SETLIST, MODE_PRESET, MODE_CARDS ];
   let currentDisplayMode = MODE_SETLIST;
 
   let currentSong = null;
@@ -102,9 +103,15 @@
 
   // -----------------------------------------------------------------------
 
+  // -----------------------------------------------------------------------
+
   async function loadSetlist() {
     try {
       presetsAndSetlists = await PresetsAndSetlists.loadFromFile('Setlist.json');
+      
+      // Validate setlist data and log any issues
+      presetsAndSetlists.validateAndLog();
+      
       populateSetlistMenu();
       selectSetlist(0);
       switchToSong(currentSetlist.firstSong());
@@ -157,7 +164,7 @@
     currentBank = selectedBank;
     
     els.presetBankSelectorBar.innerHTML = '';    
-    const banks = presetsAndSetlists.getUniqueBanks();
+    const banks = presetsAndSetlists.getUniqueBanksForCurrentDevice();
     const btnContainer = document.createElement('div');
     btnContainer.style.display = 'flex';
     btnContainer.style.gap = '4px';
@@ -187,7 +194,8 @@
     //console.log("renderPresets - currentPreset.bank=", currentPreset.bank, ", currentPreset.indexInBank=", currentPreset.indexInBank);
 
     els.setlist.innerHTML = '';
-    const presets = presetsAndSetlists.getPresetsForBank(selectedBank || currentBank);
+    const device = presetsAndSetlists.getCurrentDevice();
+    const presets = device ? device.getPresetsForBank(selectedBank || currentBank) : [];
     
     presets.forEach((preset, idx) => {
       const row = document.createElement('div');
@@ -198,6 +206,33 @@
       row.dataset.idx = String(preset.index);
       const info = document.createElement('div');
       info.innerHTML = `<div class='pgm'>${preset.pgm}</div><div class="presetTitle">${preset.label}</div>`;
+      row.appendChild(info);
+
+      row.addEventListener('click', () => {
+        switchToPreset(preset);
+      });
+
+      els.setlist.appendChild(row);
+    });
+  }
+
+  function renderCards() {
+    els.setlist.innerHTML = '';
+    const presets = presetsAndSetlists.getPresetsForCurrentDevice() || [];
+    presets.forEach((preset) => {
+      const row = document.createElement('div');
+      row.className = 'preset card-view';
+      if (currentPreset === preset) {
+        row.classList.add('active');
+      }
+      row.dataset.idx = String(preset.index);
+      const info = document.createElement('div');
+      info.innerHTML = `
+        <div class="cardHeader">
+          <div class="presetTitle">${preset.label}</div>
+          <span class='pgm'>${preset.pgm}</span>
+        </div>
+      `;
       row.appendChild(info);
 
       row.addEventListener('click', () => {
@@ -221,10 +256,22 @@
     //console.log("render - currentDisplayMode=", currentDisplayMode);
     if (currentDisplayMode === MODE_PRESET) {
       els.presetBankSelectorBar.style.display = 'block';
+      els.setlist.classList.remove('cardsMode');
+      els.setlistGrid.classList.remove('cardsMode');
+      els.notes.style.display = '';
       renderBankSelector(currentPreset ? currentPreset.bank : 1);
       renderPresets(currentPreset ? currentPreset.bank : 1);
+    } else if (currentDisplayMode === MODE_CARDS) {
+      els.presetBankSelectorBar.style.display = 'none';
+      els.setlist.classList.add('cardsMode');
+      els.setlistGrid.classList.add('cardsMode');
+      els.notes.style.display = 'none';
+      renderCards();
     } else {
       els.presetBankSelectorBar.style.display = 'none';
+      els.setlist.classList.remove('cardsMode');
+      els.setlistGrid.classList.remove('cardsMode');
+      els.notes.style.display = '';
       renderSongs();
     }
   }
@@ -312,6 +359,8 @@
       renderPresets(currentBank);
       //console.info("switchToPreset - highlighting preset in UI - preset.index=", preset.index);
       highlightPreset(els.setlist.querySelector(`.preset[data-idx="${preset.index}"]`));
+    } else if (currentDisplayMode === MODE_CARDS) {
+      highlightPreset(els.setlist.querySelector(`.preset.card-view[data-idx="${preset.index}"]`));
     }
 
     const useBank = true, oneBased = true;
@@ -427,11 +476,11 @@
     //console.log("Toggling SOLO, currentPreset=", currentPreset.pgm, "soloPreset=", currentSetlist ? currentSetlist.soloPreset : null, ", displayModeBeforeSolo=", displayModeBeforeSolo);
     let isSoloSelected = displayModeBeforeSolo!==null;
     if(isSoloSelected) {
-      // switch back to either SONG or PRESET that was selected when SOLO was pressed
-      if(displayModeBeforeSolo !== currentDisplayMode) {
-        toggleDisplayMode();
-      }
+      // switch back to the mode that was selected when SOLO was pressed
+      changeDisplayMode(displayModeBeforeSolo);
       if(currentDisplayMode === MODE_PRESET) {
+        switchToPreset(presetBeforeSolo);
+      } else if(currentDisplayMode === MODE_CARDS) {
         switchToPreset(presetBeforeSolo);
       } else {
         switchToSong(currentSong);
@@ -446,12 +495,12 @@
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
       displayModeBeforeSolo = currentDisplayMode;
 
-      if(currentDisplayMode === MODE_PRESET) { 
+      if(currentDisplayMode === MODE_PRESET || currentDisplayMode === MODE_CARDS) { 
         presetBeforeSolo = currentPreset;
       }
       switchToPreset(currentSetlist.soloPreset);
       if(currentDisplayMode !== MODE_PRESET) { 
-        toggleDisplayMode(true);
+        changeDisplayMode(MODE_PRESET);
       }
       els.soloToggle.classList.add('active');
       els.soloToggle.setAttribute('aria-pressed', 'true');
