@@ -1,10 +1,46 @@
 const fs = require('fs');
 const path = require('path');
 
+// Get setlist name from command-line argument
+const setlistName = process.argv[2];
+
+if (!setlistName) {
+    console.error('Usage: node SetlistToHtml.js <setlist-name>');
+    console.error('Example: node SetlistToHtml.js "UJ FULL"');
+    process.exit(1);
+}
+
 // Read the Setlist.json file
 const setlistPath = path.join(__dirname, 'Setlist.json');
 const setlistData = JSON.parse(fs.readFileSync(setlistPath, 'utf8'));
-const setlistIndex = 2; // Change this index to select a different setlist
+
+// Find the setlist with the given name across all bands
+let targetSetlist = null;
+let bandName = null;
+
+for (const band of setlistData.bands) {
+    if (band.setlists) {
+        const found = band.setlists.find(sl => sl.name === setlistName);
+        if (found) {
+            targetSetlist = found;
+            bandName = band.name;
+            break;
+        }
+    }
+}
+
+if (!targetSetlist) {
+    console.error(`Setlist "${setlistName}" not found in Setlist.json`);
+    console.error('Available setlists:');
+    for (const band of setlistData.bands) {
+        if (band.setlists) {
+            band.setlists.forEach(sl => {
+                console.error(`  - "${sl.name}" (Band: ${band.name})`);
+            });
+        }
+    }
+    process.exit(1);
+}
 
 // Create HTML content
 const htmlContent = `<!DOCTYPE html>
@@ -12,7 +48,7 @@ const htmlContent = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setlist</title>
+    <title>${bandName} - ${setlistName}</title>
     <style>
         body {
             margin: 10px;
@@ -21,6 +57,12 @@ const htmlContent = `<!DOCTYPE html>
         .setlist {
             background-color: white;
             padding: 10px;
+        }
+
+        .setlist-header {
+            font-family: 'Verdana', monospace;
+            font-size: 12px;
+            text-align: right;
         }
         
         .song-row {
@@ -67,7 +109,8 @@ const htmlContent = `<!DOCTYPE html>
 </head>
 <body>
     <div class="setlist">
-${setlistData.setlists[setlistIndex].songs.map(song => {
+        <div class="setlist-header">${bandName} - ${setlistName}</div>
+${targetSetlist.songs.map(song => {
                 const breakLine = song.break ? '        <hr/>\n' : '';
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
                 const capoLine = song.capo ? `<span class="capo-flag">${song.capo}</span>` : '';
@@ -82,4 +125,5 @@ const outputPath = path.join(__dirname, 'Setlist-Rendered.html');
 fs.writeFileSync(outputPath, htmlContent, 'utf8');
 
 console.log(`HTML file created: ${outputPath}`);
-console.log(`Total songs: ${setlistData.setlists[setlistIndex].songs.length}`);
+console.log(`Setlist: ${bandName} - ${setlistName}`);
+console.log(`Total songs: ${targetSetlist.songs.length}`);

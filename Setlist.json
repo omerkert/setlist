@@ -3,6 +3,7 @@
   "devices": [
     { "name" : "profiler",
       "id" : "KP",
+      "midi-out" : [ "" ],
       "presets" : [
         { "pgm": "1-1", "label": "AC20 CLN CMP",    "effectBtns": [ "PRE BST", "POST BST", "CHR", "DLY" ] },
         { "pgm": "1-2", "label": "AC20 CLN",        "effectBtns": [ "PRE BST", "POST BST", "CHR", "DLY" ] },
@@ -70,20 +71,10 @@
 
       ]
     },
-    { "name" : "Ampero",
-      "id" : "AM",
-      "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank",
-      "presets" : [
-        { "pgm": "1-1", "label": "AC20 CLN CMP" },
-        { "pgm": "1-2", "label": "AC20 CLN" },
-        { "pgm": "1-3", "label": "AC20 SOLO" },
-        { "pgm": "2-1", "label": "AC20 UCL" },
-        { "pgm": "2-1", "label": "AC20 CRU" }
-      ]
-    },
     { 
-      "name" : "GP-150",
+      "name" : "Valeton GP-150",
       "id" : "GP",
+      "midi-out" : [ "" ],
       "description": "...",
       "bank-size": 4,
       "presets" : [
@@ -95,6 +86,18 @@
         { "pgm": "2-2", "label": "UCL ST HW" },
         { "pgm": "2-3", "label": "ODR ST HW" },
         { "pgm": "2-4", "label": "SOLO Soldano" }
+      ]
+    },
+    { "name" : "Ampero Mini",
+      "id" : "AM",
+      "midi-out" : [ "" ],
+      "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank",
+      "presets" : [
+        { "pgm": "1-1", "label": "AC20 CLN CMP" },
+        { "pgm": "1-2", "label": "AC20 CLN" },
+        { "pgm": "1-3", "label": "AC20 SOLO" },
+        { "pgm": "2-1", "label": "AC20 UCL" },
+        { "pgm": "2-1", "label": "AC20 CRU" }
       ]
     }
   ],
@@ -200,7 +203,7 @@
         { "title": "Alperose",                "pgm": "11-2", "capo": "II" },
         { "title": "Angels",                  "pgm": "13-5" },
         { "title": "Another Brick",           "pgm": "13-4" },
-        { "title": "Are you gonna be my girl","pgm": "11-5", "GP": "7" },
+        { "title": "Are you gbm girl",        "pgm": "11-5", "GP": "7" },
         { "title": "Baby one more time",      "pgm": "11-4" },        
         { "title": "Bad Moon Rising",         "pgm": "11-2", "key": "B" },
         { "title": "Baila Morena",            "pgm": "12-4", "capo": "III" },
@@ -218,18 +221,18 @@
         { "title": "Honky Tonk Women",        "pgm": "11-4" },
         { "title": "I love Rock N Roll",      "pgm": "11-5" },
         { "title": "I want to break free",    "pgm": "11-4" },
-        { "title": "Jumping Jack Flash",      "pgm": "11-4", "break": 1 },
+        { "title": "Jumping Jack Flash",      "pgm": "11-4" },
         { "title": "Kiss",                    "pgm": "11-4" },
-        { "title": "Knockin on Heavens Door", "pgm": "12-3" },
+        { "title": "Knockin on Hvns Door", "pgm": "12-3" },
         { "title": "Leave your hat on",       "pgm": "11-4" },
-        { "title": "Let me entertain you",    "pgm": "14-1" },
+        { "title": "Let me entertain you",    "pgm": "14-1", "key": "D" },
         { "title": "Long Train Running",      "pgm": "14-2" },
         { "title": "Loosing my Religion",     "pgm": "11-1", "GP": "1", "capo": "V" },
         { "title": "Love Yourself",           "pgm": "11-1", "GP": "1", "key": "G" },
         { "title": "Ob-La-Di",                "pgm": "12-3" },
         { "title": "Pokerface",               "pgm": "11-5" },
         { "title": "Rocking all over",        "pgm": "11-4" },
-        { "title": "Running Down a Dream",    "pgm": "11-4", "break": 1 },
+        { "title": "Running Down a Dream",    "pgm": "11-4" },
         { "title": "Sex on Fire",             "pgm": "11-5", "capo": "DROP D" },
         { "title": "Shake it off",            "pgm": "12-3" },
         { "title": "Shotgun",                 "pgm": "11-1", "GP": "1" },
@@ -283,11 +286,11 @@
           { "title": "Shake it off" },
           { "title": "All the small things" },
           { "title": "Song 2" },
-          { "title": "Are you gonna be my girl" },
+          { "title": "Are you gbm girl" },
           { "title": "Shutup and Dance" },
           { "title": "Dance with MANDO" },
           { "title": "I want to break free" },
-          { "title": "Knockin on Heavens Door" },
+          { "title": "Knockin on Hvns Door" },
           { "title": "Dancing on the ceiling" },
 
           { "title": "Jumping Jack Flash", "break": 1 },
@@ -334,7 +337,7 @@
           { "title": "Hit me Baby" },
           { "title": "7 Nation Army" },
           { "title": "Dance with MANDO" },
-          { "title": "Knockin on Heavens Door" },
+          { "title": "Knockin on Hvns Door" },
           { "title": "All the small things" },
           { "title": "Let me entertain you" },
           { "title": "I love Rock N Roll" },
@@ -342,7 +345,7 @@
           { "title": "Rocking all over" },
           { "title": "Born to be Wild"  },
           { "title": "Song 2" },
-          { "title": "Are you gonna be my girl" },
+          { "title": "Are you gbm girl" },
           { "title": "Sex on Fire" },
           { "title": "Highway to hell" },
           { "title": "W. Nuss" },
