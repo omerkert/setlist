@@ -17,6 +17,7 @@ const setlistData = JSON.parse(fs.readFileSync(setlistPath, 'utf8'));
 // Find the setlist with the given name across all bands
 let targetSetlist = null;
 let bandName = null;
+let bandSongs = null;
 
 for (const band of setlistData.bands) {
     if (band.setlists) {
@@ -24,6 +25,7 @@ for (const band of setlistData.bands) {
         if (found) {
             targetSetlist = found;
             bandName = band.name;
+            bandSongs = band.songs;
             break;
         }
     }
@@ -66,10 +68,24 @@ const htmlContent = `<!DOCTYPE html>
         }
         
         .song-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-family: 'Verdana', monospace;
             font-size: 32px;
             padding: 8px 10px;
             line-height: 1.4;
+        }
+
+        .song-title {
+            flex: 1;
+        }
+
+        .song-pgm {
+            margin-left: 20px;
+            font-size: 24px;
+            color: #666;
+            white-space: nowrap;
         }
         
         .song-row:last-child {
@@ -111,10 +127,16 @@ const htmlContent = `<!DOCTYPE html>
     <div class="setlist">
         <div class="setlist-header">${bandName} - ${setlistName}</div>
 ${targetSetlist.songs.map(song => {
+                // Find the pgm for this song from the band's songs array
+                const bandSong = bandSongs.find(bs => bs.title === song.title);
+                const pgm = bandSong && bandSong.pgm ? bandSong.pgm : '';
+                
                 const breakLine = song.break ? '        <hr/>\n' : '';
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
                 const capoLine = song.capo ? `<span class="capo-flag">${song.capo}</span>` : '';
-                return `${breakLine}        <div class="song-row">${song.title}${pauseLine}${capoLine}</div>`;
+                const pgmLine = pgm ? `<span class="song-pgm">${pgm}</span>` : '';
+                
+                return `${breakLine}        <div class="song-row"><span class="song-title">${song.title}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
             }).join('\n')}
     </div>
 </body>
