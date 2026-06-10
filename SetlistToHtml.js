@@ -93,7 +93,8 @@ const htmlContent = `<!DOCTYPE html>
         }
         
         .song-row:hover {
-            background-color: #f9f9f9;
+            border-radius: 15px;
+            background-color: #4aabdf;
         }
 
         .pause-flag {
@@ -108,10 +109,22 @@ const htmlContent = `<!DOCTYPE html>
             vertical-align: middle;
         }
 
+        .key-flag {
+            display: inline-block;
+            margin-left: 1.5rem;
+            padding: 3px 16px;
+            border: 1px solid #7a7a7a;
+            border-radius: 999px;
+            color: #333;
+            background: rgba(200, 200, 200, 0.18);
+            font-size: 1.4rem;
+            vertical-align: middle;
+        }
+
         .capo-flag {
             display: inline-block;
-            margin-left: 0.75rem;
-            padding: 3px 8px;
+            margin-left: 1.5rem;
+            padding: 3px 16px;
             border: 1px solid #3fc1c9;
             border-radius: 999px;
             color: #0c4c56;
@@ -127,16 +140,18 @@ const htmlContent = `<!DOCTYPE html>
     <div class="setlist">
         <div class="setlist-header">${bandName} - ${setlistName}</div>
 ${targetSetlist.songs.map(song => {
-                // Find the pgm for this song from the band's songs array
-                const bandSong = bandSongs.find(bs => bs.title === song.title);
+                const bandSong = bandSongs.find(bs => bs.title.toLowerCase() === song.title.toLowerCase());
                 const pgm = bandSong && bandSong.pgm ? bandSong.pgm : '';
-                
+                const songCapo = song.capo || (bandSong && bandSong.capo) || '';
+                const songKey = song.key || (bandSong && bandSong.key) || '';
+
                 const breakLine = song.break ? '        <hr/>\n' : '';
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
-                const capoLine = song.capo ? `<span class="capo-flag">${song.capo}</span>` : '';
+                const keyLine = songKey ? `<span class="key-flag">${songKey}</span>` : '';
+                const capoLine = songCapo ? `<span class="capo-flag">${songCapo}</span>` : '';
                 const pgmLine = pgm ? `<span class="song-pgm">${pgm}</span>` : '';
-                
-                return `${breakLine}        <div class="song-row"><span class="song-title">${song.title}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
+
+                return `${breakLine}        <div class="song-row"><span class="song-title">${song.title}${keyLine}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
             }).join('\n')}
     </div>
 </body>
