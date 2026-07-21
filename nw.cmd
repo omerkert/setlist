@@ -1,0 +1,1 @@
+C:\apps\nwjs-v0.113.0-win-x64\nw.exe .
