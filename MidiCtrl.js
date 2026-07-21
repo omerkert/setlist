@@ -2,12 +2,13 @@
  * MidiCtrl.js - Dedicated class for MIDI communication and control.
  */
 class MidiCtrl {
-  constructor(onPC, setInStatus, setOutStatus) {
+  constructor(onPC, setInStatus, setOutStatus, onOutputsChanged = null) {
     this.midiAccess = null;
     this.midiOut = null;
     this.onPC = onPC; // callback for PC messages
     this.setInStatus = setInStatus;
     this.setOutStatus = setOutStatus;
+    this.onOutputsChanged = onOutputsChanged;
 
     // we'll attach the first midi input device we find with one of these names (in order of preference):
     this.MIDI_INPUT_NAMES = [
@@ -73,6 +74,17 @@ class MidiCtrl {
   refreshMidiOut() {
     //console.log('Refreshing MIDI output devices...');
     const outputs = this.midiAccess ? Array.from(this.midiAccess.outputs.values()) : [];
+    if (typeof this.onOutputsChanged === 'function') {
+      const matchedOutput = this.onOutputsChanged(outputs);
+      this.midiOut = matchedOutput || null;
+      if (this.midiOut) {
+        this.setOutStatus(this.midiOut.name, 'ok');
+      } else {
+        this.setOutStatus('NO OUT', 'err');
+      }
+      return;
+    }
+
     this.midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || null;
     if(this.midiOut) {
       this.setOutStatus(this.midiOut.name, 'ok');

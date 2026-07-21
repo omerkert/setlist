@@ -7,6 +7,26 @@ class Device {
     this.name = data.name || '';
     this.id = data.id || '';
     this.description = data.description || '';
+    this.tunerCc = data['tuner-cc'] !== undefined ? String(data['tuner-cc']) : '';
+    this.effects = Array.isArray(data.effects)
+      ? data.effects.map((group) => {
+          if (Array.isArray(group)) {
+            return group.map((cc) => Number(cc)).filter(Number.isFinite);
+          }
+          return [];
+        })
+      : [];
+    this.effectBtnsCc = Array.isArray(data['effectBtns-cc'])
+      ? data['effectBtns-cc'].map((cc) => Number(cc)).filter(Number.isFinite)
+      : [];
+    this.modEffectsCc = Array.isArray(data['modEffects-cc'])
+      ? data['modEffects-cc'].map((cc) => Number(cc)).filter(Number.isFinite)
+      : [];
+    console.log(`Device created: name="${this.name}", id="${this.id}", description="${this.description}", tunerCc="${this.tunerCc}", effectGroupCount="${this.effects.length}"`);
+    const midiOutIds = data['midi-out-id'] || data.midiOutId || [];
+    this.midiOutIds = Array.isArray(midiOutIds)
+      ? midiOutIds.filter(Boolean).map(String)
+      : (midiOutIds ? [String(midiOutIds)] : []);
     this.presets = (data.presets || []).map(preset => new Preset(preset));
     
     // Set index and navigation for presets within this device
@@ -51,6 +71,26 @@ class Device {
     });
     return Array.from(banks).sort((a, b) => a - b);
   }
+
+  matchesMidiOutputName(outputName) {
+    const haystack = String(outputName || '').toLowerCase();
+    return this.midiOutIds.some((midiOutId) => {
+      const needle = String(midiOutId || '').toLowerCase();
+      return needle && haystack.includes(needle);
+    });
+  }
+
+  getEffectGroupCount() {
+    return Array.isArray(this.effects) ? this.effects.length : 0;
+  }
+
+  getEffectGroupCcNums(groupIndex) {
+    const groups = Array.isArray(this.effects) ? this.effects : [];
+    const group = groups[groupIndex];
+    return Array.isArray(group)
+      ? group.map((cc) => Number(cc)).filter(Number.isFinite)
+      : [];
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -66,7 +106,24 @@ class Preset {
 
     this.label = data.label || '';
 
-    this.effectBtns = data.effectBtns || [];
+    this.effects = Array.isArray(data.effects) ? data.effects : [];
+    this.effectBtns = Array.isArray(data.effectBtns) ? data.effectBtns : [];
+    this.fixEffects = Array.isArray(data.fixEffects) ? data.fixEffects : [];
+    this.modEffects = Array.isArray(data.modEffects)
+      ? data.modEffects.map((entry) => {
+          if (typeof entry === 'string') {
+            return { label: entry || '', state: 0 };
+          }
+          if (entry && typeof entry === 'object') {
+            const [name, value] = Object.entries(entry)[0] || [null, 0];
+            return {
+              label: name || '',
+              state: Number(value) === 1 ? 1 : 0
+            };
+          }
+          return null;
+        }).filter(Boolean)
+      : [];
 
     this.channel = 1;
     this.bankMSB = data.bankMSB;
@@ -96,17 +153,15 @@ class Band {
     
     // Master song definitions for this band (used as defaults for songs in setlists)
     this.bandSongs = (data.songs || []).map(song => ({
-      title: song.title,
+      ...song,
+      title: song.title || '',
       pgm: song.pgm || null,
-      // Device-specific shortcuts (stored but not used at Song level yet)
-      KP: song.KP || null,
-      AM: song.AM || null,
-      GP: song.GP || null,
       key: song.key || '',
       capo: song.capo || '',
       notes: song.notes || '',
       break: song.break || 0,
-      noPause: song['no-pause'] || song.noPause || 0,
+      noPause: song.noPause !== undefined ? song.noPause : (song['no-pause'] || 0),
+      'no-pause': song['no-pause'] !== undefined ? song['no-pause'] : (song.noPause || 0),
       GT1: song.GT1 || ''
     }));
     
@@ -145,17 +200,29 @@ class Song {
     
     // Apply band defaults first, then override with setlist-specific data
     this.title = data.title || '';
-    
-    // Resolve pgm: prefer setlist data, then generic pgm, then device-specific keys (KP, AM, GP)
-    if (data.pgm !== undefined) {
-      this.pgm = data.pgm;
-    } else if (bandDefaults.pgm) {
-      this.pgm = bandDefaults.pgm;
-    } else {
-      // Fall back to first available device-specific key
-      this.pgm = bandDefaults.KP || bandDefaults.AM || bandDefaults.GP || '';
-    }
-    
+
+    const mergedSong = { ...bandDefaults, ...data };
+    const deviceIds = presetsAndSetlist.devices.map(device => device.id).filter(Boolean);
+    this.devicePgm = {};
+    let firstDevicePgm = null;
+    deviceIds.forEach(deviceId => {
+      const explicitValue = mergedSong[deviceId];
+      const legacyValue = mergedSong[deviceId.toUpperCase()];
+      const deviceValue = explicitValue !== undefined ? explicitValue : (legacyValue !== undefined ? legacyValue : null);
+      this.devicePgm[deviceId] = deviceValue;
+      if (firstDevicePgm === null && deviceValue !== null && deviceValue !== '') {
+        firstDevicePgm = deviceValue;
+      }
+    });
+
+    const explicitKpValue = mergedSong.kp !== undefined ? mergedSong.kp : null;
+    const explicitLegacyPgm = mergedSong.pgm !== undefined ? mergedSong.pgm : null;
+    this.pgm = explicitKpValue !== null && explicitKpValue !== undefined && explicitKpValue !== ''
+      ? explicitKpValue
+      : (explicitLegacyPgm !== null && explicitLegacyPgm !== undefined && explicitLegacyPgm !== ''
+        ? explicitLegacyPgm
+        : (firstDevicePgm || ''));
+
     this.notes = data.notes !== undefined ? data.notes : (bandDefaults.notes || '');
     this.break = data.break !== undefined ? data.break : (bandDefaults.break || 0);
     this.noPause = data['no-pause'] !== undefined ? data['no-pause'] : (data.noPause !== undefined ? data.noPause : (bandDefaults.noPause || 0));
@@ -163,15 +230,38 @@ class Song {
     this.key = data.key !== undefined ? data.key : (bandDefaults.key || '');
     this.GT1 = data.GT1 !== undefined ? data.GT1 : (bandDefaults.GT1 || '');
 
-    this.preset = presetsAndSetlist.findPresetByPgm(this.pgm);
+    this.preset = null;
 
     // this.index + this.prev + this.next will be set by the Setlist constructor after all songs are created
 
     //console.info("Created Song - title:", this.title, ", pgm:", this.pgm, ", presetLabel=" + (this.preset ? this.preset.label : "none"));
   }
 
-  getPreset() {
-    return this.pgm;
+  getPatchForDevice(device) {
+    if (!device || !device.id) {
+      return this.pgm;
+    }
+
+    const devicePatch = this.devicePgm[device.id];
+    return (devicePatch !== null && devicePatch !== undefined && devicePatch !== '') ? devicePatch : null;
+  }
+
+  getPreset(device) {
+    if (device) {
+      return this.getPatchForDevice(device) || '';
+    }
+    return this.pgm || '';
+  }
+
+  getPresetForDevice(presetsAndSetlist, device) {
+    const patch = this.getPatchForDevice(device);
+    if (!patch) {
+      return null;
+    }
+
+    const deviceId = device && device.id ? device.id : null;
+    const devicePreset = deviceId ? presetsAndSetlist.findPresetByPgmInDevice(patch, device) : null;
+    return devicePreset || null;
   }
 
   hasNotes() {
@@ -200,12 +290,16 @@ class Setlist {
   constructor(data = {}, presetsAndSetlist, band = null) {
     this.band = band;
     this.name = data.name || '';
-    let soloPresetString = (data.cfg && data.cfg.soloPreset) || "1-3";
+    const soloPresetConfig = (data.cfg && data.cfg.soloPreset) || '1-3';
+    const soloPresetByDevice = typeof soloPresetConfig === 'object' && soloPresetConfig !== null
+      ? soloPresetConfig
+      : { default: soloPresetConfig };
     this.cfg = {
-      soloPresetString: soloPresetString,
-      soloPresetBank: parseInt(soloPresetString.split('-')[0]),
-      soloPresetIndex: parseInt(soloPresetString.split('-')[1]) - 1
+      soloPresetConfig: soloPresetByDevice,
+      soloPresetString: typeof soloPresetConfig === 'string' ? soloPresetConfig : (soloPresetByDevice.default || '1-3')
     };
+    this.cfg.soloPresetBank = parseInt(this.cfg.soloPresetString.split('-')[0], 10) || 1;
+    this.cfg.soloPresetIndex = parseInt(this.cfg.soloPresetString.split('-')[1], 10) - 1 || 0;
     this.songs = (data.songs || []).map(song => new Song(song, presetsAndSetlist, band));
     this.songs.forEach((song, index) => {
       song.index = index;
@@ -213,6 +307,23 @@ class Setlist {
       song.next = index < this.songs.length - 1 ? this.songs[index + 1] : null;
     });
     this.soloPreset = presetsAndSetlist.findPresetByPgm(this.cfg.soloPresetString);
+  }
+
+  getSoloPresetForDevice(device, presetsAndSetlist) {
+    const deviceId = device && device.id ? device.id : null;
+    const value = deviceId && this.cfg.soloPresetConfig && this.cfg.soloPresetConfig[deviceId]
+      ? this.cfg.soloPresetConfig[deviceId]
+      : (this.cfg.soloPresetConfig && this.cfg.soloPresetConfig.default ? this.cfg.soloPresetConfig.default : this.cfg.soloPresetString);
+    if (!presetsAndSetlist || !value) {
+      return null;
+    }
+    if (device && device.findPresetByPgm) {
+      const devicePreset = device.findPresetByPgm(value);
+      if (devicePreset) {
+        return devicePreset;
+      }
+    }
+    return presetsAndSetlist.findPresetByPgmInDevice(value, device) || presetsAndSetlist.findPresetByPgm(value) || null;
   }
 
   getSongCount() {
@@ -256,6 +367,7 @@ class PresetsAndSetlists {
     
     // Track currently selected device (default to first device)
     this.currentDeviceIndex = 0;
+    this.activeMidiOutputDevice = null;
     
     // Build flat presets array from all devices (for backward compatibility)
     this.presets = [];
@@ -425,7 +537,28 @@ class PresetsAndSetlists {
    * @returns {Device} The currently selected device
    */
   getCurrentDevice() {
-    return this.getDevice(this.currentDeviceIndex);
+    return this.activeMidiOutputDevice || this.getDevice(this.currentDeviceIndex);
+  }
+
+  updateActiveMidiOutputDevice(midiOutputs = []) {
+    const outputNames = Array.isArray(midiOutputs)
+      ? midiOutputs.map((output) => output && output.name ? output.name : output).filter(Boolean)
+      : [];
+
+    for (let i = 0; i < this.devices.length; i++) {
+      const device = this.devices[i];
+      if (outputNames.some((outputName) => device.matchesMidiOutputName(outputName))) {
+        this.currentDeviceIndex = i;
+        this.activeMidiOutputDevice = device;
+        return device;
+      }
+    }
+
+    return null;
+  }
+
+  getActiveMidiOutputDevice() {
+    return this.activeMidiOutputDevice || this.getCurrentDevice();
   }
 
   /**
@@ -475,6 +608,8 @@ class PresetsAndSetlists {
       device = this.getDevice(deviceIdentifier);
     } else if (typeof deviceIdentifier === 'string') {
       device = this.findDeviceByName(deviceIdentifier) || this.findDeviceById(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'object' && deviceIdentifier !== null) {
+      device = deviceIdentifier;
     }
     return device ? device.presets : [];
   }
@@ -482,7 +617,7 @@ class PresetsAndSetlists {
   /**
    * Find preset by pgm within a specific device
    * @param {string} pgm - Preset program identifier (e.g., "1-1")
-   * @param {string|number} deviceIdentifier - Device name, id, or index
+   * @param {string|number|object} deviceIdentifier - Device name, id, index, or device object
    */
   findPresetByPgmInDevice(pgm, deviceIdentifier) {
     let device;
@@ -490,6 +625,8 @@ class PresetsAndSetlists {
       device = this.getDevice(deviceIdentifier);
     } else if (typeof deviceIdentifier === 'string') {
       device = this.findDeviceByName(deviceIdentifier) || this.findDeviceById(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'object' && deviceIdentifier !== null) {
+      device = deviceIdentifier;
     }
     return device ? device.findPresetByPgm(pgm) : null;
   }
@@ -510,7 +647,8 @@ class PresetsAndSetlists {
         const song = setlist.songs[j];
 
         // Check 1: Song references undefined preset
-        if (!song.preset && song.pgm) {
+        const songPatch = song.pgm || (song.devicePgm ? Object.values(song.devicePgm).find(value => value) : null);
+        if (songPatch && !this.findPresetByPgm(songPatch)) {
           warnings.push({
             type: 'UNDEFINED_PRESET',
             message: `Undefined preset reference in setlist "${setlist.name}"`,
@@ -518,7 +656,7 @@ class PresetsAndSetlists {
               setlist: setlist.name,
               songIndex: j,
               songTitle: song.title,
-              pgm: song.pgm,
+              pgm: songPatch,
               band: bandName
             }
           });

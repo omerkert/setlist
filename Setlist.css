@@ -103,7 +103,7 @@ button.directBtn:focus {
 }
 
 #soloToggle {
-  background: linear-gradient(180deg, #880f2f, #ff9147);
+  background: linear-gradient(180deg, #550f2f, #aa9147);
   border-color: #aa5f3f;
   box-shadow: 0 12px 20px rgba(255, 95, 127, 0.35);
   padding: 8px 4px;
@@ -515,11 +515,55 @@ body.performance .send {
   gap: 4px;
   align-items: center;
   justify-content: center;
+  min-height: 56px;
+}
+
+.effectButtonsBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+#effectButtonsBar {
+  background: rgba(120, 78, 27, 0.24);
+  border-radius: 10px;
+  padding: 2px 4px;
+}
+
+#modEffectsButtonsBar {
+  background: rgba(92, 43, 92, 0.24);
+  border-radius: 10px;
+  padding: 2px 4px;
+}
+
+.footerNavBtn {
+  padding: 6px 12px 6px 12px;
+  margin: 4px;
+  min-width: 60px;
+  font-size: 1.1rem;
 }
 
 .footerBtn {
-  padding:2px 12px 2px 12px;
-  margin:4px 4px 4px 4px;
+  padding: 6px 14px 6px 14px;
+  margin: 4px 4px 4px 4px;
+  min-height: 48px;
+  font-size: 1.05rem;
+}
+
+#effectButtonsBar .footerBtn {
+  background: linear-gradient(180deg, #965d1d, #3d240b);
+  border-color: #ffb45a;
+}
+
+#modEffectsButtonsBar .footerBtn {
+  background: linear-gradient(180deg, #5a345c, #2b1530);
+  border-color: #d889e8;
+}
+
+#modEffectsButtonsBar .footerBtn:nth-child(5) {
+  margin-left: 14px;
 }
 
 /* Performance mode layout tweaks */

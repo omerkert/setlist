@@ -26,6 +26,10 @@
 
     presetBankSelectorBar: document.getElementById('presetBankSelectorBar'),
     footer: document.querySelector('.footer'),
+    footerLeftToggle: document.getElementById('footerLeftToggle'),
+    footerRightToggle: document.getElementById('footerRightToggle'),
+    effectButtonsBar: document.getElementById('effectButtonsBar'),
+    modEffectsButtonsBar: document.getElementById('modEffectsButtonsBar'),
 
     soloSelected: false,
 
@@ -51,6 +55,7 @@
 
   let displayModeBeforeSolo = null;
   let presetBeforeSolo = null;
+  let activeFooterPanel = 'effects';
 
   // -----------------------------------------------------------------------
 
@@ -72,15 +77,16 @@
   }
 
   function changeDisplayMode(modeName) {
-    //console.log("changeDisplayMode - modeName=", modeName);
-
     currentDisplayMode = modeName;
     els.modeMenuBtn.textContent = currentDisplayMode;
     closeModeMenu();
     renderSetlistOrPresets();
 
-    if(modeName === MODE_SETLIST) {
-      switchToPreset(currentSong.preset);
+    if (modeName === MODE_SETLIST) {
+      const preset = getPresetForSong(currentSong);
+      if (preset) {
+        switchToPreset(preset);
+      }
     }
 
     /*
@@ -115,6 +121,9 @@
       populateSetlistMenu();
       selectSetlist(0);
       switchToSong(currentSetlist.firstSong());
+      if (midiCtrl) {
+        midiCtrl.refreshMidiOut();
+      }
 
       //changeDisplayMode(MODE_PRESET);
 
@@ -296,6 +305,43 @@
     setBadge(els.inStatus, text, cls);
   }
 
+  function getDeviceEffectGroups(device) {
+    if (!device) return [];
+    if (Array.isArray(device.effects) && device.effects.length > 0) {
+      return device.effects.map((group) => Array.isArray(group)
+        ? group.map((cc) => Number(cc)).filter(Number.isFinite)
+        : []);
+    }
+
+    const legacyGroups = [];
+    const effectBtnsCc = Array.isArray(device.effectBtnsCc) ? device.effectBtnsCc : [];
+    const modEffectsCc = Array.isArray(device.modEffectsCc) ? device.modEffectsCc : [];
+    if (effectBtnsCc.length > 0) legacyGroups.push(effectBtnsCc);
+    if (modEffectsCc.length > 0) legacyGroups.push(modEffectsCc);
+    return legacyGroups;
+  }
+
+  function getPresetEffectGroups(preset) {
+    if (!preset) return [];
+    if (Array.isArray(preset.effects) && preset.effects.length > 0) {
+      return preset.effects;
+    }
+
+    const legacyGroups = [];
+    if (Array.isArray(preset.effectBtns)) legacyGroups.push(preset.effectBtns);
+    if (Array.isArray(preset.fixEffects)) legacyGroups.push(preset.fixEffects);
+    if (Array.isArray(preset.modEffects)) legacyGroups.push(preset.modEffects);
+    return legacyGroups;
+  }
+
+  function getEffectGroupCcNum(groupIndex, index) {
+    const device = presetsAndSetlists && presetsAndSetlists.getCurrentDevice ? presetsAndSetlists.getCurrentDevice() : null;
+    const effectGroups = getDeviceEffectGroups(device);
+    const ccValues = Array.isArray(effectGroups[groupIndex]) ? effectGroups[groupIndex] : [];
+    const ccValue = Number(ccValues[index]);
+    return Number.isInteger(ccValue) ? ccValue : (groupIndex === 0 ? 75 + index : 17 + index);
+  }
+
   // map MIDI-Input PC messages to patches
   function pcToPreset(pc) {
     switch (pc) {
@@ -321,16 +367,16 @@
         return;
 
       case 4: // BANK-2 => Effect Button I
-        toggleEffectButton(els.effectBtns[0], 75);
+        toggleEffectButton(els.effectBtns[0], getEffectGroupCcNum(0, 0));
         return;
       case 5: // BANK-2 => Effect Button II
-        toggleEffectButton(els.effectBtns[1], 76);
+        toggleEffectButton(els.effectBtns[1], getEffectGroupCcNum(0, 1));
         return;
       case 6: // BANK-2 => Effect Button III
-        toggleEffectButton(els.effectBtns[2], 77);
+        toggleEffectButton(els.effectBtns[2], getEffectGroupCcNum(0, 2));
         return;
       case 7: // BANK-2 => Effect Button IIII
-        toggleEffectButton(els.effectBtns[3], 78);
+        toggleEffectButton(els.effectBtns[3], getEffectGroupCcNum(0, 3));
         return;
     }
   }
@@ -342,12 +388,46 @@
     midiCtrl.sendPC(ch1, prog, whenMs);
   }
 
+  function getPresetForSong(song) {
+    if (!song) return null;
+    const device = presetsAndSetlists.getCurrentDevice();
+    return song.getPresetForDevice(presetsAndSetlists, device);
+  }
+
+  function refreshActiveMidiOutputDevice(outputs) {
+    if (!presetsAndSetlists) return null;
+
+    const activeDevice = presetsAndSetlists.updateActiveMidiOutputDevice(outputs);
+    if (!activeDevice) {
+      return null;
+    }
+
+    const matchedOutput = outputs.find((output) => output && output.name && activeDevice.matchesMidiOutputName(output.name)) || null;
+    if (currentSong) {
+      switchToSong(currentSong);
+    }
+    if (currentDisplayMode === MODE_SETLIST) {
+      renderSongs();
+    } else if (currentDisplayMode === MODE_PRESET) {
+      renderBankSelector(currentPreset ? currentPreset.bank : 1);
+      renderPresets(currentPreset ? currentPreset.bank : 1);
+    } else if (currentDisplayMode === MODE_CARDS) {
+      renderCards();
+    }
+    return matchedOutput;
+  }
+
   function switchToSong(song) {
-    //console.info("switchToSong - song=", song);
     currentSong = song;
     highlightSong();
     setNotes(song);
-    switchToPreset(song.preset);
+    const preset = getPresetForSong(song);
+    if (preset) {
+      switchToPreset(preset);
+    } else {
+      currentPreset = null;
+      updateEffectButtons(null);
+    }
   }
 
   function switchToPreset(preset) {
@@ -386,17 +466,168 @@
     els.notes.innerHTML = text;
   }
 
-  function updateEffectButtons(preset) {
-    for(let i=0; i<els.effectBtns.length; i++) {
-      const btn = els.effectBtns[i];
-      btn.setAttribute('aria-pressed', 'false');
-      btn.style.outline = 'none';
-      if(preset && preset.effectBtns && preset.effectBtns[i]) {
-        btn.innerHTML = `<span class="effect-tag">${preset.effectBtns[i]}</span>`;
-      } else {
-        btn.innerHTML = `E ${i+1}`;
-      }
+  function normalizeEffectEntries(groupConfig, labelPrefix = 'E') {
+    if (!Array.isArray(groupConfig)) {
+      return [];
     }
+
+    return groupConfig.map((entry, idx) => {
+      if (typeof entry === 'string') {
+        const trimmedLabel = entry ? entry.trim() : '';
+        return {
+          label: trimmedLabel || '...',
+          state: 0,
+          isDisabled: !trimmedLabel
+        };
+      }
+
+      if (entry && typeof entry === 'object') {
+        const entries = Object.entries(entry);
+        if (entries.length === 0) {
+          return {
+            label: '...',
+            state: 0,
+            isDisabled: true
+          };
+        }
+
+        const [label, value] = entries[0];
+        const trimmedLabel = typeof label === 'string' ? label.trim() : '';
+        return {
+          label: trimmedLabel || '...',
+          state: Number(value) === 1 ? 1 : 0,
+          isDisabled: !trimmedLabel
+        };
+      }
+
+      return null;
+    }).filter(Boolean);
+  }
+
+  function getPresetModEffectEntries(preset) {
+    const groups = getPresetEffectGroups(preset);
+    const entries = [];
+
+    groups.slice(1).forEach((group, groupOffset) => {
+      normalizeEffectEntries(group, 'M').forEach((entry, itemIndex) => {
+        entries.push({
+          ...entry,
+          groupIndex: groupOffset + 1,
+          itemIndex
+        });
+      });
+    });
+
+    return entries;
+  }
+
+  function renderModEffectButtons(preset) {
+    els.modEffectsButtonsBar.innerHTML = '';
+    const modEffectEntries = getPresetModEffectEntries(preset);
+
+    if (modEffectEntries.length === 0) {
+      els.modEffectsButtonsBar.style.display = 'none';
+      return;
+    }
+
+    modEffectEntries.forEach((config) => {
+      const btn = document.createElement('button');
+      btn.className = 'footerBtn';
+      btn.type = 'button';
+      const hasLabel = config && typeof config.label === 'string' && config.label.trim().length > 0;
+      const label = hasLabel ? config.label : '...';
+      const isOn = Number(config && config.state) === 1;
+      const isDisabled = Boolean(config && config.isDisabled) || !hasLabel;
+
+      btn.innerHTML = `<span class="effect-tag">${label}</span>`;
+      btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      btn.style.boxShadow = isOn ? 'inset 0 0 0 3px #cf352e' : 'none';
+      btn.style.borderColor = isOn ? '#cf352e' : '';
+      btn.disabled = isDisabled;
+      btn.setAttribute('aria-disabled', String(isDisabled));
+
+      if (!isDisabled) {
+        btn.addEventListener('click', () => {
+          const ccNum = getEffectGroupCcNum(config.groupIndex, config.itemIndex);
+          const nextState = btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true';
+          btn.setAttribute('aria-pressed', nextState);
+          btn.style.boxShadow = nextState === 'true' ? 'inset 0 0 0 3px #cf352e' : 'none';
+          btn.style.borderColor = nextState === 'true' ? '#cf352e' : '';
+          sendCC(1, ccNum, nextState === 'true' ? 1 : 0);
+        });
+      }
+      els.modEffectsButtonsBar.appendChild(btn);
+    });
+
+    els.modEffectsButtonsBar.style.display = 'flex';
+  }
+
+  function updateFooterPanelVisibility() {
+    const hasEffectButtons = els.effectBtns.some((btn) => !btn.hidden);
+    const hasModEffectButtons = els.modEffectsButtonsBar.children.length > 0;
+
+    if (activeFooterPanel === 'modEffects' && !hasModEffectButtons) {
+      activeFooterPanel = 'effects';
+    }
+
+    if (activeFooterPanel === 'effects' && !hasEffectButtons) {
+      activeFooterPanel = 'modEffects';
+    }
+
+    const showEffects = activeFooterPanel === 'effects' && hasEffectButtons;
+    const showModEffects = activeFooterPanel === 'modEffects' && hasModEffectButtons;
+
+    els.effectButtonsBar.style.display = showEffects ? 'flex' : 'none';
+    els.modEffectsButtonsBar.style.display = showModEffects ? 'flex' : 'none';
+    els.footerLeftToggle.classList.toggle('active', showEffects);
+    els.footerRightToggle.classList.toggle('active', showModEffects);
+  }
+
+  function updateEffectButtons(preset) {
+    const presetEffectGroups = getPresetEffectGroups(preset);
+    const effectButtonConfig = normalizeEffectEntries(presetEffectGroups[0], 'E');
+    const hasEffectButtons = effectButtonConfig.length > 0;
+    const modEffectEntries = getPresetModEffectEntries(preset);
+    const hasModEffectButtons = modEffectEntries.length > 0;
+    const showFooter = hasEffectButtons || hasModEffectButtons;
+    els.footer.style.display = showFooter ? 'block' : 'none';
+
+    els.effectButtonsBar.style.display = hasEffectButtons ? 'flex' : 'none';
+    renderModEffectButtons(preset);
+
+    for (let i = 0; i < els.effectBtns.length; i++) {
+      const btn = els.effectBtns[i];
+      const config = effectButtonConfig[i];
+
+      if (!config) {
+        btn.hidden = true;
+        btn.innerHTML = '';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.style.boxShadow = 'none';
+        btn.style.borderColor = '';
+        continue;
+      }
+
+      btn.hidden = false;
+      btn.innerHTML = `<span class="effect-tag">${config.label}</span>`;
+      const isOn = Number(config.state) === 1;
+      const isDisabled = Boolean(config.isDisabled);
+      btn.disabled = isDisabled;
+      btn.setAttribute('aria-disabled', String(isDisabled));
+      btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      btn.style.boxShadow = isDisabled ? 'none' : (isOn ? 'inset 0 0 0 3px #cf352e' : 'none');
+      btn.style.borderColor = isDisabled ? '' : (isOn ? '#cf352e' : '');
+    }
+
+    if (!hasEffectButtons && !hasModEffectButtons) {
+      activeFooterPanel = 'effects';
+    } else if (!hasEffectButtons && hasModEffectButtons) {
+      activeFooterPanel = 'modEffects';
+    } else if (hasEffectButtons && !hasModEffectButtons) {
+      activeFooterPanel = 'effects';
+    }
+
+    updateFooterPanelVisibility();
   }
 
   function getSongsToRender() {
@@ -418,8 +649,10 @@
       const keyLabel = s.key ? `<span class="key-tag">${s.key}</span>` : '';
       const pauseLabel = s.hasNoPause && s.hasNoPause() ? '<span class="pause-tag"><b>~</b>pause</span>' : '';
       const capoLabel = s.hasCapo && s.hasCapo() ? `<span class="capo-tag">${s.capo}</span>` : '';
+      const currentDevice = presetsAndSetlists.getCurrentDevice();
+      const patchLabel = s.getPreset(currentDevice) || '';
       const info = document.createElement('div');
-      info.innerHTML = `<div class='pgm'>${s.getPreset()}</div><div class="songTitle">${s.title}${keyLabel}${pauseLabel}${capoLabel}</div>`;
+      info.innerHTML = `<div class='pgm'>${patchLabel}</div><div class="songTitle">${s.title}${keyLabel}${pauseLabel}${capoLabel}</div>`;
       row.appendChild(info);
       els.setlist.appendChild(row);
     });
@@ -444,7 +677,8 @@
   }
 
   function highlightBtn(btn) {
-    btn.style.outline = '5px solid #cf352e';
+    btn.style.boxShadow = 'inset 0 0 0 3px #cf352e';
+    btn.style.borderColor = '#cf352e';
   }
 
   function presetPrevious() {
@@ -498,10 +732,11 @@
       if(currentDisplayMode === MODE_PRESET || currentDisplayMode === MODE_CARDS) { 
         presetBeforeSolo = currentPreset;
       }
-      switchToPreset(currentSetlist.soloPreset);
+      const soloPreset = currentSetlist.getSoloPresetForDevice(presetsAndSetlists.getCurrentDevice(), presetsAndSetlists);
       if(currentDisplayMode !== MODE_PRESET) { 
         changeDisplayMode(MODE_PRESET);
       }
+      switchToPreset(soloPreset || currentSetlist.soloPreset);
       els.soloToggle.classList.add('active');
       els.soloToggle.setAttribute('aria-pressed', 'true');
     }
@@ -512,7 +747,8 @@
     if (btn.getAttribute('aria-pressed') === 'true') {
       //console.log("Turning OFF effect for CC#", ccNum);
       btn.setAttribute('aria-pressed', 'false');
-      btn.style.outline = 'none';
+      btn.style.boxShadow = 'none';
+      btn.style.borderColor = '';
       sendCC(1, ccNum, 0);
     } else {
       //console.log("Turning ON effect for CC#", ccNum);
@@ -523,7 +759,23 @@
   }
 
   els.effectBtns.forEach((btn, i) => {
-    btn.addEventListener('click', () => { toggleEffectButton(btn, 75+i); });
+    btn.addEventListener('click', () => {
+      if (btn.hidden) return;
+      toggleEffectButton(btn, getEffectGroupCcNum(0, i));
+    });
+  });
+
+  function toggleFooterPanel() {
+    activeFooterPanel = activeFooterPanel === 'effects' ? 'modEffects' : 'effects';
+    updateFooterPanelVisibility();
+  }
+
+  els.footerLeftToggle.addEventListener('click', () => {
+    toggleFooterPanel();
+  });
+
+  els.footerRightToggle.addEventListener('click', () => {
+    toggleFooterPanel();
   });
 
   // Prevent accidental zoom on double tap
@@ -549,7 +801,7 @@
     }
   });
 
-  const midiCtrl = new MidiCtrl(pcToPreset, setInStatus, setOutStatus);
+  const midiCtrl = new MidiCtrl(pcToPreset, setInStatus, setOutStatus, refreshActiveMidiOutputDevice);
 
   populateModeMenu();
 
@@ -626,15 +878,20 @@
   // --------------------------------------------------------------------------
 
   els.tuner.addEventListener('click', () => {
+    const activeDevice = presetsAndSetlists && presetsAndSetlists.getCurrentDevice ? presetsAndSetlists.getCurrentDevice() : null;
+    const tunerCc = activeDevice && activeDevice.tunerCc ? parseInt(activeDevice.tunerCc, 10) : 31;
+
+    console.log(`Tuner button clicked - activeDevice=${activeDevice ? activeDevice.name : 'none'}, tunerCc=${tunerCc}`);
+
     const on = els.tuner.getAttribute('aria-pressed') === 'true';
     if (on) {
       els.tuner.style.outline = 'none';
       els.tuner.setAttribute('aria-pressed', 'false');
-      sendCC(1, 31, 0);
+      sendCC(1, tunerCc, 0);
     } else {
       highlightBtn(els.tuner);
       els.tuner.setAttribute('aria-pressed', 'true');
-      sendCC(1, 31, 127);
+      sendCC(1, tunerCc, 127);
     }
   });
 

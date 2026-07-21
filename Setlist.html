@@ -67,10 +67,15 @@
 
   <div class="footer">
     <div class="footerBar">
-      <button id="effectBtn1" class="footerBtn">E 1</button>
-      <button id="effectBtn2" class="footerBtn">E 2</button>
-      <button id="effectBtn3" class="footerBtn">E 3</button>
-      <button id="effectBtn4" class="footerBtn">E 4</button>
+      <button id="footerLeftToggle" class="footerNavBtn" type="button" title="Toggle effects panel" aria-label="Toggle effects panel">◀</button>
+      <div id="effectButtonsBar" class="effectButtonsBar">
+        <button id="effectBtn1" class="footerBtn">E 1</button>
+        <button id="effectBtn2" class="footerBtn">E 2</button>
+        <button id="effectBtn3" class="footerBtn">E 3</button>
+        <button id="effectBtn4" class="footerBtn">E 4</button>
+      </div>
+      <div id="modEffectsButtonsBar" class="effectButtonsBar" hidden></div>
+      <button id="footerRightToggle" class="footerNavBtn" type="button" title="Toggle mod effects panel" aria-label="Toggle mod effects panel">▶</button>
     </div>
   </div>
 

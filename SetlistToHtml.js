@@ -141,7 +141,9 @@ const htmlContent = `<!DOCTYPE html>
         <div class="setlist-header">${bandName} - ${setlistName}</div>
 ${targetSetlist.songs.map(song => {
                 const bandSong = bandSongs.find(bs => bs.title.toLowerCase() === song.title.toLowerCase());
-                const pgm = bandSong && bandSong.pgm ? bandSong.pgm : '';
+                const patchValue = song.kp !== undefined
+                    ? song.kp
+                    : (bandSong && bandSong.kp !== undefined ? bandSong.kp : (bandSong && bandSong.pgm ? bandSong.pgm : ''));
                 const songCapo = song.capo || (bandSong && bandSong.capo) || '';
                 const songKey = song.key || (bandSong && bandSong.key) || '';
 
@@ -149,7 +151,7 @@ ${targetSetlist.songs.map(song => {
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
                 const keyLine = songKey ? `<span class="key-flag">${songKey}</span>` : '';
                 const capoLine = songCapo ? `<span class="capo-flag">${songCapo}</span>` : '';
-                const pgmLine = pgm ? `<span class="song-pgm">${pgm}</span>` : '';
+                const pgmLine = patchValue ? `<span class="song-pgm">${patchValue}</span>` : '';
 
                 return `${breakLine}        <div class="song-row"><span class="song-title">${song.title}${keyLine}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
             }).join('\n')}
