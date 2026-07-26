@@ -45,7 +45,7 @@ class MidiCtrl {
     if (!this.midiAccess) return;
 
     const allInputs = Array.from(this.midiAccess.inputs.values());
-    //allInputs.forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
+    allInputs.forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
 
     let inputs = allInputs.filter((midiInput) => this.MIDI_INPUT_NAMES.some((name) => midiInput.name.includes(name)));
 
@@ -86,7 +86,7 @@ class MidiCtrl {
     }
 
     this.midiOut = outputs.find((o) => o.name && o.name.includes('Profiler')) || null;
-    if(this.midiOut) {
+    if (this.midiOut) {
       this.setOutStatus(this.midiOut.name, 'ok');
     } else {
       this.setOutStatus('NO OUT', 'err');

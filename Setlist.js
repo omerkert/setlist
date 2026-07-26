@@ -29,16 +29,8 @@
     footerLeftToggle: document.getElementById('footerLeftToggle'),
     footerRightToggle: document.getElementById('footerRightToggle'),
     effectButtonsBar: document.getElementById('effectButtonsBar'),
-    modEffectsButtonsBar: document.getElementById('modEffectsButtonsBar'),
 
-    soloSelected: false,
-
-    effectBtns: [
-      document.getElementById('effectBtn1'),
-      document.getElementById('effectBtn2'),
-      document.getElementById('effectBtn3'),
-      document.getElementById('effectBtn4')
-    ]        
+    soloSelected: false
   };
 
   let currentSetlist = null;
@@ -55,7 +47,7 @@
 
   let displayModeBeforeSolo = null;
   let presetBeforeSolo = null;
-  let activeFooterPanel = 'effects';
+  let activeEffectGroupIndex = 0;
 
   // -----------------------------------------------------------------------
 
@@ -297,8 +289,7 @@
   function setOutStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
     setBadge(els.outStatus, text, cls);
-    //setFooterVisible(level === 'ok');
-    setFooterVisible(true);
+    updateEffectButtons(currentPreset);
   }
   function setInStatus(text, level = 'warn') {
     const cls = level === 'ok' ? 'ok' : (level === 'warn' ? 'warn' : 'err');
@@ -323,15 +314,19 @@
 
   function getPresetEffectGroups(preset) {
     if (!preset) return [];
+    let rawGroups = [];
     if (Array.isArray(preset.effects) && preset.effects.length > 0) {
-      return preset.effects;
+      rawGroups = preset.effects;
+    } else {
+      if (Array.isArray(preset.effectBtns)) rawGroups.push(preset.effectBtns);
+      if (Array.isArray(preset.fixEffects)) rawGroups.push(preset.fixEffects);
+      if (Array.isArray(preset.modEffects)) rawGroups.push(preset.modEffects);
     }
-
-    const legacyGroups = [];
-    if (Array.isArray(preset.effectBtns)) legacyGroups.push(preset.effectBtns);
-    if (Array.isArray(preset.fixEffects)) legacyGroups.push(preset.fixEffects);
-    if (Array.isArray(preset.modEffects)) legacyGroups.push(preset.modEffects);
-    return legacyGroups;
+    return rawGroups.filter((group) => {
+      if (!Array.isArray(group)) return false;
+      const entries = normalizeEffectEntries(group);
+      return entries.some((entry) => !entry.isDisabled);
+    });
   }
 
   function getEffectGroupCcNum(groupIndex, index) {
@@ -366,17 +361,17 @@
         toggleSolo();
         return;
 
-      case 4: // BANK-2 => Effect Button I
-        toggleEffectButton(els.effectBtns[0], getEffectGroupCcNum(0, 0));
+      case 4: // BANK-2 => Effect Button 1
+        toggleEffectButtonIndex(0);
         return;
-      case 5: // BANK-2 => Effect Button II
-        toggleEffectButton(els.effectBtns[1], getEffectGroupCcNum(0, 1));
+      case 5: // BANK-2 => Effect Button 2
+        toggleEffectButtonIndex(1);
         return;
-      case 6: // BANK-2 => Effect Button III
-        toggleEffectButton(els.effectBtns[2], getEffectGroupCcNum(0, 2));
+      case 6: // BANK-2 => Effect Button 3
+        toggleEffectButtonIndex(2);
         return;
-      case 7: // BANK-2 => Effect Button IIII
-        toggleEffectButton(els.effectBtns[3], getEffectGroupCcNum(0, 3));
+      case 7: // BANK-2 => Effect Button 4
+        toggleEffectButtonIndex(3);
         return;
     }
   }
@@ -432,6 +427,7 @@
 
   function switchToPreset(preset) {
     currentPreset = preset;
+    activeEffectGroupIndex = 0;
 
     if (currentDisplayMode === MODE_PRESET) {
       currentBank = preset.bank;
@@ -504,38 +500,38 @@
     }).filter(Boolean);
   }
 
-  function getPresetModEffectEntries(preset) {
-    const groups = getPresetEffectGroups(preset);
-    const entries = [];
+  function renderEffectGroup(preset, groupIndex) {
+    els.effectButtonsBar.innerHTML = '';
+    const presetEffectGroups = getPresetEffectGroups(preset);
+    const groupConfig = presetEffectGroups[groupIndex];
+    const entries = normalizeEffectEntries(groupConfig, 'E');
 
-    groups.slice(1).forEach((group, groupOffset) => {
-      normalizeEffectEntries(group, 'M').forEach((entry, itemIndex) => {
-        entries.push({
-          ...entry,
-          groupIndex: groupOffset + 1,
-          itemIndex
-        });
-      });
-    });
-
-    return entries;
-  }
-
-  function renderModEffectButtons(preset) {
-    els.modEffectsButtonsBar.innerHTML = '';
-    const modEffectEntries = getPresetModEffectEntries(preset);
-
-    if (modEffectEntries.length === 0) {
-      els.modEffectsButtonsBar.style.display = 'none';
+    if (entries.length === 0) {
       return;
     }
 
-    modEffectEntries.forEach((config) => {
+    entries.forEach((config, itemIndex) => {
       const btn = document.createElement('button');
       btn.className = 'footerBtn';
       btn.type = 'button';
       const hasLabel = config && typeof config.label === 'string' && config.label.trim().length > 0;
       const label = hasLabel ? config.label : '...';
+
+      // Apply label-specific color class
+      const labelColorMap = {
+        'PRE-BST': 'fx-pre-bst',
+        'PST-BST': 'fx-pst-bst',
+        'CHR':     'fx-chr',
+        'DLY':     'fx-dly',
+        'CMP':     'fx-cmp',
+        'TRM':     'fx-trm',
+        'PHA':     'fx-pha',
+        'REV':     'fx-rev',
+        'BST':     'fx-bst',
+      };
+      if (hasLabel && labelColorMap[label]) {
+        btn.classList.add(labelColorMap[label]);
+      }
       const isOn = Number(config && config.state) === 1;
       const isDisabled = Boolean(config && config.isDisabled) || !hasLabel;
 
@@ -545,10 +541,11 @@
       btn.style.borderColor = isOn ? '#cf352e' : '';
       btn.disabled = isDisabled;
       btn.setAttribute('aria-disabled', String(isDisabled));
+      btn.setAttribute('aria-label', label);
 
       if (!isDisabled) {
         btn.addEventListener('click', () => {
-          const ccNum = getEffectGroupCcNum(config.groupIndex, config.itemIndex);
+          const ccNum = getEffectGroupCcNum(groupIndex, itemIndex);
           const nextState = btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true';
           btn.setAttribute('aria-pressed', nextState);
           btn.style.boxShadow = nextState === 'true' ? 'inset 0 0 0 3px #cf352e' : 'none';
@@ -556,78 +553,36 @@
           sendCC(1, ccNum, nextState === 'true' ? 1 : 0);
         });
       }
-      els.modEffectsButtonsBar.appendChild(btn);
+      els.effectButtonsBar.appendChild(btn);
     });
-
-    els.modEffectsButtonsBar.style.display = 'flex';
-  }
-
-  function updateFooterPanelVisibility() {
-    const hasEffectButtons = els.effectBtns.some((btn) => !btn.hidden);
-    const hasModEffectButtons = els.modEffectsButtonsBar.children.length > 0;
-
-    if (activeFooterPanel === 'modEffects' && !hasModEffectButtons) {
-      activeFooterPanel = 'effects';
-    }
-
-    if (activeFooterPanel === 'effects' && !hasEffectButtons) {
-      activeFooterPanel = 'modEffects';
-    }
-
-    const showEffects = activeFooterPanel === 'effects' && hasEffectButtons;
-    const showModEffects = activeFooterPanel === 'modEffects' && hasModEffectButtons;
-
-    els.effectButtonsBar.style.display = showEffects ? 'flex' : 'none';
-    els.modEffectsButtonsBar.style.display = showModEffects ? 'flex' : 'none';
-    els.footerLeftToggle.classList.toggle('active', showEffects);
-    els.footerRightToggle.classList.toggle('active', showModEffects);
   }
 
   function updateEffectButtons(preset) {
     const presetEffectGroups = getPresetEffectGroups(preset);
-    const effectButtonConfig = normalizeEffectEntries(presetEffectGroups[0], 'E');
-    const hasEffectButtons = effectButtonConfig.length > 0;
-    const modEffectEntries = getPresetModEffectEntries(preset);
-    const hasModEffectButtons = modEffectEntries.length > 0;
-    const showFooter = hasEffectButtons || hasModEffectButtons;
-    els.footer.style.display = showFooter ? 'block' : 'none';
+    const numGroups = presetEffectGroups.length;
 
-    els.effectButtonsBar.style.display = hasEffectButtons ? 'flex' : 'none';
-    renderModEffectButtons(preset);
-
-    for (let i = 0; i < els.effectBtns.length; i++) {
-      const btn = els.effectBtns[i];
-      const config = effectButtonConfig[i];
-
-      if (!config) {
-        btn.hidden = true;
-        btn.innerHTML = '';
-        btn.setAttribute('aria-pressed', 'false');
-        btn.style.boxShadow = 'none';
-        btn.style.borderColor = '';
-        continue;
-      }
-
-      btn.hidden = false;
-      btn.innerHTML = `<span class="effect-tag">${config.label}</span>`;
-      const isOn = Number(config.state) === 1;
-      const isDisabled = Boolean(config.isDisabled);
-      btn.disabled = isDisabled;
-      btn.setAttribute('aria-disabled', String(isDisabled));
-      btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
-      btn.style.boxShadow = isDisabled ? 'none' : (isOn ? 'inset 0 0 0 3px #cf352e' : 'none');
-      btn.style.borderColor = isDisabled ? '' : (isOn ? '#cf352e' : '');
+    if (!preset || numGroups === 0) {
+      setFooterVisible(false);
+      els.effectButtonsBar.innerHTML = '';
+      els.footerLeftToggle.style.display = 'none';
+      els.footerRightToggle.style.display = 'none';
+      return;
     }
 
-    if (!hasEffectButtons && !hasModEffectButtons) {
-      activeFooterPanel = 'effects';
-    } else if (!hasEffectButtons && hasModEffectButtons) {
-      activeFooterPanel = 'modEffects';
-    } else if (hasEffectButtons && !hasModEffectButtons) {
-      activeFooterPanel = 'effects';
+    setFooterVisible(true);
+    if (activeEffectGroupIndex >= numGroups || activeEffectGroupIndex < 0) {
+      activeEffectGroupIndex = 0;
     }
 
-    updateFooterPanelVisibility();
+    if (numGroups > 1) {
+      els.footerLeftToggle.style.display = 'inline-block';
+      els.footerRightToggle.style.display = 'inline-block';
+    } else {
+      els.footerLeftToggle.style.display = 'none';
+      els.footerRightToggle.style.display = 'none';
+    }
+
+    renderEffectGroup(preset, activeEffectGroupIndex);
   }
 
   function getSongsToRender() {
@@ -742,40 +697,28 @@
     }
   }
 
-  function toggleEffectButton(btn, ccNum) {
-    //console.log("toggleEffectButton - ", btn.getAttribute('aria-pressed'));
-    if (btn.getAttribute('aria-pressed') === 'true') {
-      //console.log("Turning OFF effect for CC#", ccNum);
-      btn.setAttribute('aria-pressed', 'false');
-      btn.style.boxShadow = 'none';
-      btn.style.borderColor = '';
-      sendCC(1, ccNum, 0);
-    } else {
-      //console.log("Turning ON effect for CC#", ccNum);
-      btn.setAttribute('aria-pressed', 'true');
-      highlightBtn(btn);
-      sendCC(1, ccNum, 1);
+  function toggleEffectButtonIndex(index) {
+    const children = els.effectButtonsBar.children;
+    if (index >= 0 && index < children.length) {
+      const btn = children[index];
+      if (btn && !btn.disabled) {
+        btn.click();
+      }
     }
   }
 
-  els.effectBtns.forEach((btn, i) => {
-    btn.addEventListener('click', () => {
-      if (btn.hidden) return;
-      toggleEffectButton(btn, getEffectGroupCcNum(0, i));
-    });
-  });
-
-  function toggleFooterPanel() {
-    activeFooterPanel = activeFooterPanel === 'effects' ? 'modEffects' : 'effects';
-    updateFooterPanelVisibility();
-  }
-
   els.footerLeftToggle.addEventListener('click', () => {
-    toggleFooterPanel();
+    const presetEffectGroups = getPresetEffectGroups(currentPreset);
+    if (presetEffectGroups.length <= 1) return;
+    activeEffectGroupIndex = (activeEffectGroupIndex - 1 + presetEffectGroups.length) % presetEffectGroups.length;
+    renderEffectGroup(currentPreset, activeEffectGroupIndex);
   });
 
   els.footerRightToggle.addEventListener('click', () => {
-    toggleFooterPanel();
+    const presetEffectGroups = getPresetEffectGroups(currentPreset);
+    if (presetEffectGroups.length <= 1) return;
+    activeEffectGroupIndex = (activeEffectGroupIndex + 1) % presetEffectGroups.length;
+    renderEffectGroup(currentPreset, activeEffectGroupIndex);
   });
 
   // Prevent accidental zoom on double tap

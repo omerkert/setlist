@@ -66,19 +66,6 @@
 * Right-click your USB Root Hubs > Properties > Power Management
 * Uncheck "Allow the computer to turn off this device to save power."
 
-
 # NEXT / TODO
 
-* test SOLO mode thoroughly
-* add SONGLIST mode (SETLIST => PRESETS => SONGLIST) / all songs, alphabetically
-
-* Ampero Mini
- * Slot A1 On/Off: CC #48
- * Slot A2 On/Off: CC #49
- * Slot A3 On/Off: CC #50
- * Slot A4 On/Off: CC #51
- * Slot B1 On/Off: CC #54
- * Tuner: CC #55
- * Patch Volume: CC #7
- * Expression Pedal: CC #11
- 
+* ...

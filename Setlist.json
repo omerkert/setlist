@@ -3,6 +3,7 @@
   "devices": [
     { "name" : "Kemper Profiler Player",
       "id" : "kp",
+      "description": "...",
       "midi-out-id" : [ "profiler" ],
       "tuner-cc" : 31,
 
@@ -21,7 +22,7 @@
         },
 
         { "pgm": "1-2", "label": "AC20 CLN", 
-                "effects": [
+          "effects": [
             [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ],
             [ { "CMP": 0 }, { "TRM": 0 }, { "": 0 }, { "": 0 }, { "BST": 0 }, { "PHA": 0 }, { "DLY": 0 }, { "REV": 1 } ]
           ]
@@ -45,7 +46,12 @@
           ]
         },
 
-        { "pgm": "2-1", "label": "Let me love you" },
+        { "pgm": "2-1", "label": "Let me love you",
+          "effects": [
+            [ { "PRE-BST": 0 }, { "": 0 }, { "": 0 }, { "": 0 } ],
+            [ { "CMP": 1 }, { "DIS": 0 }, { "": 0 }, { "": 0 }, { "BST": 0 }, { "PHA": 0 }, { "": 0 }, { "REV": 1 } ]
+          ]
+        },
         { "pgm": "2-2", "label": "Falling for you" },
         { "pgm": "2-3", "label": "Don't start now" },
         { "pgm": "2-4", "label": "Sweet 7 Nation" },
@@ -108,9 +114,9 @@
     { 
       "name" : "Valeton GP-150",
       "id" : "gp",
+      "description": "...",
       "midi-out-id" : [ "GP-150 MIDI" ],
       "tuner-cc" : "60",
-      "description": "...",
       "bank-size": 4,
       "presets" : [
         { "pgm": "1-1", "label": "ACC Taylor" },
@@ -142,11 +148,35 @@
     },
     { "name" : "Ampero Mini",
       "id" : "am",
-      "midi-out-id" : [ "AMPERO-TO-CHECK" ],
-      "tuner-cc" : "",
-      "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank",
+      "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank (26-PREV, 27-NEXT, 48-FX1, 49-FX2, 50-AMP, 51-NR, 52-CAB, 53-EQ, 54-FX3, 55-DLY, 56-REV, 57 or 60-TUNER)",
+      "midi-out-id" : [ "Ampero Mini Subdevice" ],
+      "tuner-cc" : "60",
+      "effects" : [
+        [ 48, 49, 53, 54, 55, 56 ]
+      ],
       "presets" : [
-        { "pgm": "1-1", "label": "AC20 CLN CMP" },
+        { 
+          "pgm": "1-1", "label": "AC20 CLN CMP",
+          "effects": [ [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ] ]
+
+        },
+        { "pgm": "1-2", "label": "AC20 CLN" },
+        { "pgm": "1-3", "label": "AC20 SOLO" },
+        { "pgm": "2-1", "label": "AC20 UCL" },
+        { "pgm": "2-1", "label": "AC20 CRU" }
+      ]
+    },
+    { "name" : "Fractal FM3",
+      "id" : "fm",
+      "description": "...",
+      "midi-out-id" : [ "MidiPortA" ],
+      "tuner-cc" : "60",
+      "presets" : [
+        { 
+          "pgm": "1-1", "label": "AC20 CLN CMP",
+          "effects": [ [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ] ]
+
+        },
         { "pgm": "1-2", "label": "AC20 CLN" },
         { "pgm": "1-3", "label": "AC20 SOLO" },
         { "pgm": "2-1", "label": "AC20 UCL" },
@@ -159,8 +189,8 @@
     {
       "name": "UJ",
       "songs": [
-        { "title": "About Damn Time",   "kp": "1-1" },   
-        { "title": "APT",               "kp": "1-5" },
+        { "title": "About Damn Time",   "kp": "1-1", "am": "1-1" },   
+        { "title": "APT",               "kp": "1-5", "am": "2-1" },
         { "title": "Crazy",             "kp": "1-1" },
         { "title": "Deja Vu",           "kp": "1-1" },
         { "title": "Don't know why",    "kp": "2-5", "capo": "III" },
@@ -178,9 +208,9 @@
         { "title": "Kiss",              "kp": "1-4" },
         { "title": "Let me love you",   "kp": "2-1" },
         { "title": "Lost in Music",     "kp": "1-1" },
-        { "title": "Love Foolosophy",   "kp": "1-1", "gp": "13-2" },
+        { "title": "Love Foolosophy",   "kp": "1-1", "gp": "13-2", "am": "1-1" },
         { "title": "Man in the mirror", "kp": "1-2" },
-        { "title": "Mercy",             "kp": "1-4", "gp": "10-2" },
+        { "title": "Mercy",             "kp": "1-4", "gp": "10-2", "am": "2-1" },
         { "title": "Rolling the deep", "kp": "1-4" },
         { "title": "Sing it back", "kp": "1-1" },
         { "title": "So easy to fall", "kp": "1-1" },

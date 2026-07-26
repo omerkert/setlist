@@ -512,58 +512,76 @@ body.performance .send {
 .footerBar {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
   justify-content: center;
-  min-height: 56px;
+  min-height: 64px;
 }
 
 .effectButtonsBar {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
   justify-content: center;
-}
-
-#effectButtonsBar {
   background: rgba(120, 78, 27, 0.24);
-  border-radius: 10px;
-  padding: 2px 4px;
-}
-
-#modEffectsButtonsBar {
-  background: rgba(92, 43, 92, 0.24);
-  border-radius: 10px;
-  padding: 2px 4px;
+  border-radius: 12px;
+  padding: 4px 8px;
 }
 
 .footerNavBtn {
-  padding: 6px 12px 6px 12px;
+  padding: 8px 14px;
   margin: 4px;
-  min-width: 60px;
-  font-size: 1.1rem;
+  min-width: 64px;
+  min-height: 52px;
+  font-size: 1.15rem;
 }
 
 .footerBtn {
-  padding: 6px 14px 6px 14px;
-  margin: 4px 4px 4px 4px;
-  min-height: 48px;
-  font-size: 1.05rem;
-}
-
-#effectButtonsBar .footerBtn {
+  padding: 8px 18px;
+  margin: 4px;
+  min-height: 52px;
+  font-size: 1.15rem;
   background: linear-gradient(180deg, #965d1d, #3d240b);
   border-color: #ffb45a;
 }
 
-#modEffectsButtonsBar .footerBtn {
-  background: linear-gradient(180deg, #5a345c, #2b1530);
-  border-color: #d889e8;
+/* Effect label color variants */
+.footerBtn.fx-pre-bst {
+  background: linear-gradient(180deg, #8b1a1a, #4a0d0d);
+  border-color: #c0392b;
 }
-
-#modEffectsButtonsBar .footerBtn:nth-child(5) {
-  margin-left: 14px;
+.footerBtn.fx-pst-bst {
+  background: linear-gradient(180deg, #d45b5b, #8b2a2a);
+  border-color: #e57373;
+}
+.footerBtn.fx-chr {
+  background: linear-gradient(180deg, #4a90c4, #1c4b6e);
+  border-color: #7ec8e3;
+}
+.footerBtn.fx-dly {
+  background: linear-gradient(180deg, #2e7d32, #1a4a1d);
+  border-color: #66bb6a;
+}
+.footerBtn.fx-cmp {
+  background: linear-gradient(180deg, #00796b, #004d40);
+  border-color: #4db6ac;
+}
+.footerBtn.fx-trm {
+  background: linear-gradient(180deg, #1a3a6e, #0d1f3c);
+  border-color: #5c7fbf;
+}
+.footerBtn.fx-pha {
+  background: linear-gradient(180deg, #6a1b9a, #38006b);
+  border-color: #ab47bc;
+}
+.footerBtn.fx-rev {
+  background: linear-gradient(180deg, #1b5e20, #0a2e0d);
+  border-color: #43a047;
+}
+.footerBtn.fx-bst {
+  background: linear-gradient(180deg, #c0524a, #6b2020);
+  border-color: #ef9a9a;
 }
 
 /* Performance mode layout tweaks */
