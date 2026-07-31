@@ -5,62 +5,326 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MIDI Bluetooth Devices</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:16px}
-    button{margin-right:8px}
-    .box{margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:6px}
-    ul{margin:6px 0 0 18px}
-    .log{white-space:pre-wrap;font-family:monospace;background:#f8f8f8;padding:8px;border-radius:4px}
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --text: #e2e8f0;
+      --text-dim: #8892a4;
+      --note-on:  #00e5a0;
+      --note-off: #4a7fa5;
+      --cc:       #f59e0b;
+      --pc:       #a78bfa;
+      --pb:       #38bdf8;
+      --sysex:    #f87171;
+      --other:    #94a3b8;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 18px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button:hover { opacity: 0.85; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button.secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .box-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    ul { list-style: none; padding: 0; }
+    ul li {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 5px;
+      font-size: 0.83rem;
+      font-family: monospace;
+      color: var(--text);
+    }
+
+    /* ── Input selector ── */
+    .monitor-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .monitor-controls label { font-size: 0.85rem; color: var(--text-dim); }
+    select, input[type="number"] {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.85rem;
+    }
+    select:focus, input:focus { outline: 2px solid var(--accent); }
+
+    /* ── MIDI Monitor table ── */
+    #monitorWrap {
+      overflow: hidden;
+    }
+
+    .monitor-status {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #444;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .status-dot.active { background: var(--note-on); box-shadow: 0 0 6px var(--note-on); }
+
+    #monitorTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      font-family: monospace;
+    }
+    #monitorTable thead th {
+      text-align: left;
+      padding: 4px 8px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    #monitorTable tbody tr {
+      border-bottom: 1px solid #1e2235;
+      transition: background 0.4s;
+    }
+    #monitorTable tbody tr.flash {
+      background: rgba(108,99,255,0.18);
+      transition: background 0s;
+    }
+    #monitorTable tbody td {
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .badge-note-on  { background: rgba(0,229,160,0.15); color: var(--note-on); }
+    .badge-note-off { background: rgba(74,127,165,0.15); color: var(--note-off); }
+    .badge-cc       { background: rgba(245,158,11,0.15); color: var(--cc); }
+    .badge-pc       { background: rgba(167,139,250,0.15); color: var(--pc); }
+    .badge-pb       { background: rgba(56,189,248,0.15); color: var(--pb); }
+    .badge-sysex    { background: rgba(248,113,113,0.15); color: var(--sysex); }
+    .badge-other    { background: rgba(148,163,184,0.1); color: var(--other); }
+
+    .note-name { color: var(--accent2); font-weight: 700; }
+    .val-dim   { color: var(--text-dim); }
+
+    /* ── Clear button row ── */
+    .monitor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    #clearMonitor {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    #clearMonitor:hover { color: var(--text); }
+
+    /* ── Send panel fields ── */
+    .send-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    fieldset {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: var(--surface2);
+    }
+    legend {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0 4px;
+    }
+    fieldset label { font-size: 0.83rem; color: var(--text-dim); }
+
+    /* ── Log ── */
+    #log {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      max-height: 160px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   </style>
 </head>
 <body>
-  <h1>MIDI & Bluetooth MIDI Devices</h1>
+  <h1>MIDI &amp; Bluetooth MIDI Devices</h1>
 
-  <div>
+  <div class="toolbar">
     <button id="btnRequestMidi">Request Web MIDI Access</button>
-    <button id="btnScanBluetooth">Scan Bluetooth MIDI Device</button>
+    <button id="btnScanBluetooth" class="secondary">Scan Bluetooth MIDI Device</button>
   </div>
 
+  <!-- ── MIDI Inputs list ── -->
   <div class="box">
-    <strong>Web MIDI Inputs</strong>
+    <div class="box-title">Web MIDI Inputs</div>
     <div id="midiInputs">(none)</div>
   </div>
 
+  <!-- ── MIDI Outputs list ── -->
   <div class="box">
-    <strong>Web MIDI Outputs</strong>
+    <div class="box-title">Web MIDI Outputs</div>
     <div id="midiOutputs">(none)</div>
   </div>
 
+  <!-- ── MIDI Monitor ── -->
   <div class="box">
-    <strong>Send MIDI (Program / Control)</strong>
-    <div style="margin-top:8px">
-      <label>Output: <select id="outputSelect"><option value="">(choose Web MIDI output)</option></select></label>
-      <label style="margin-left:12px">Channel: <input id="midiChannel" type="number" min="1" max="16" value="1" style="width:60px"/></label>
+    <div class="monitor-header">
+      <div class="box-title" style="margin-bottom:0">MIDI Monitor</div>
+      <button id="clearMonitor" class="secondary">Clear</button>
     </div>
 
-    <div style="margin-top:8px">
-      <fieldset style="display:inline-block;padding:8px;border-radius:6px">
+    <div class="monitor-controls">
+      <label>Listen to: <select id="inputSelect"><option value="">(choose MIDI input)</option></select></label>
+      <div class="monitor-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Not listening</span>
+      </div>
+    </div>
+
+    <div id="monitorWrap">
+      <table id="monitorTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Time</th>
+            <th>Type</th>
+            <th>Ch</th>
+            <th>Data 1</th>
+            <th>Data 2</th>
+            <th>Raw (hex)</th>
+          </tr>
+        </thead>
+        <tbody id="monitorBody">
+          <tr><td colspan="7" style="color:var(--text-dim);padding:10px 8px;font-family:sans-serif;">Select a MIDI input above to start monitoring.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Send MIDI ── -->
+  <div class="box">
+    <div class="box-title">Send MIDI (Program / Control)</div>
+    <div class="send-row" style="margin-bottom:10px">
+      <label>Output: <select id="outputSelect"><option value="">(choose Web MIDI output)</option></select></label>
+      <label>Channel: <input id="midiChannel" type="number" min="1" max="16" value="1" style="width:60px"/></label>
+    </div>
+    <div class="send-row">
+      <fieldset>
         <legend>Program Change</legend>
         <label>Program (0-127): <input id="pcNumber" type="number" min="0" max="127" value="0" style="width:80px"/></label>
-        <button id="sendPC">Send PC</button>
+        <button id="sendPC" style="margin-left:8px">Send PC</button>
       </fieldset>
-
-      <fieldset style="display:inline-block;padding:8px;margin-left:12px;border-radius:6px">
+      <fieldset>
         <legend>Control Change</legend>
         <label>Controller (0-127): <input id="ccNumber" type="number" min="0" max="127" value="1" style="width:80px"/></label>
         <label style="margin-left:8px">Value (0-127): <input id="ccValue" type="number" min="0" max="127" value="127" style="width:80px"/></label>
-        <button id="sendCC">Send CC</button>
+        <button id="sendCC" style="margin-left:8px">Send CC</button>
       </fieldset>
     </div>
   </div>
 
+  <!-- ── Bluetooth ── -->
   <div class="box">
-    <strong>Bluetooth MIDI Devices (selected)</strong>
+    <div class="box-title">Bluetooth MIDI Devices (selected)</div>
     <div id="btDevices">(none)</div>
   </div>
 
+  <!-- ── Log ── -->
   <div class="box">
-    <strong>Log</strong>
-    <div id="log" class="log">Ready.</div>
+    <div class="box-title">Log</div>
+    <div id="log">Ready.</div>
   </div>
 
   <script src="midiDevices.js"></script>

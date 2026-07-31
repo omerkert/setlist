@@ -12,9 +12,10 @@ class MidiCtrl {
 
     // we'll attach the first midi input device we find with one of these names (in order of preference):
     this.MIDI_INPUT_NAMES = [
-      'USB-Midi',       // M-VAVE Chocolate via USB-cable
-      'MidiPort',       // M-VAVE Chocolate via USB-dongle
-      'loopMIDI Port'   // M-VAVE Chocolate via Bluetooth+loopMidi+midiBerry on Windows Tablet
+      'USB-Midi',           // M-VAVE Chocolate via USB-cable
+      'MidiPort',           // M-VAVE Chocolate via USB-dongle
+      'loopMIDI Port',      // M-VAVE Chocolate via Bluetooth+loopMidi+midiBerry on Windows Tablet
+      'Pocket Control MIDI' // Sonicake Pocket Control
     ];
 
   }

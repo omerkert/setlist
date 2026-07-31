@@ -537,8 +537,7 @@
 
       btn.innerHTML = `<span class="effect-tag">${label}</span>`;
       btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
-      btn.style.boxShadow = isOn ? 'inset 0 0 0 3px #cf352e' : 'none';
-      btn.style.borderColor = isOn ? '#cf352e' : '';
+      if (isOn) btn.classList.add('is-on');
       btn.disabled = isDisabled;
       btn.setAttribute('aria-disabled', String(isDisabled));
       btn.setAttribute('aria-label', label);
@@ -548,9 +547,14 @@
           const ccNum = getEffectGroupCcNum(groupIndex, itemIndex);
           const nextState = btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true';
           btn.setAttribute('aria-pressed', nextState);
-          btn.style.boxShadow = nextState === 'true' ? 'inset 0 0 0 3px #cf352e' : 'none';
-          btn.style.borderColor = nextState === 'true' ? '#cf352e' : '';
-          sendCC(1, ccNum, nextState === 'true' ? 1 : 0);
+          const turningOn = nextState === 'true';
+          btn.classList.toggle('is-on', turningOn);
+          if (turningOn) {
+            btn.classList.remove('just-toggled');
+            void btn.offsetWidth; // reflow to restart animation
+            btn.classList.add('just-toggled');
+          }
+          sendCC(1, ccNum, turningOn ? 1 : 0);
         });
       }
       els.effectButtonsBar.appendChild(btn);
@@ -677,7 +681,7 @@
       displayModeBeforeSolo = null;
       presetBeforeSolo = null;
 
-      els.soloToggle.classList.remove('active');
+      els.soloToggle.classList.remove('active', 'just-toggled');
       els.soloToggle.setAttribute('aria-pressed', 'false');
 
     } else {
@@ -693,6 +697,9 @@
       }
       switchToPreset(soloPreset || currentSetlist.soloPreset);
       els.soloToggle.classList.add('active');
+      els.soloToggle.classList.remove('just-toggled');
+      void els.soloToggle.offsetWidth; // reflow to restart animation
+      els.soloToggle.classList.add('just-toggled');
       els.soloToggle.setAttribute('aria-pressed', 'true');
     }
   }
