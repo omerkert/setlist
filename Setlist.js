@@ -835,7 +835,9 @@
 
     const on = els.tuner.getAttribute('aria-pressed') === 'true';
     if (on) {
-      els.tuner.style.outline = 'none';
+      els.tuner.style.outline = '';
+      els.tuner.style.boxShadow = '';
+      els.tuner.style.borderColor = '';
       els.tuner.setAttribute('aria-pressed', 'false');
       sendCC(1, tunerCc, 0);
     } else {

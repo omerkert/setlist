@@ -111,6 +111,57 @@
 
       ]
     },
+
+    {
+      "name" : "GENOME V2",
+      "id" : "gn",
+      "description": "Two notes GENOME V2 Windows Application",
+      "midi-out-id" : [ "GENOME" ],
+      "tuner-cc" : 31,
+
+      "effects" : [
+        [ 75, 76, 77, 78 ]
+      ],
+
+      "presets" : [
+        { 
+          "pgm": "1-1", "label": "CLN CMP",
+          "effects": [
+            [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ],
+            [ { "CMP": 1 }, { "TRM": 0 }, { "": 0 }, { "": 0 }, { "BST": 0 }, { "PHA": 0 }, { "DLY": 0 }, { "REV": 1 } ]
+          ]
+        },
+
+        { "pgm": "1-2", "label": "CLN", 
+          "effects": [
+            [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ]
+          ]
+        },
+        { "pgm": "1-3", "label": "SOLO" ,
+          "effects": [
+            [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "PST-BST": 0 }, { "DLY": 0 } ]
+          ]
+        },
+        { "pgm": "1-4", "label": "UCL",
+          "effects": [
+            [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ]
+          ]
+        },
+        { "pgm": "1-5", "label": "CRU",
+          "effects": [
+            [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ]
+          ]
+        },
+
+        { "pgm": "2-1", "label": "Tage wie diese",
+          "effects": [
+            [ { "": 0 }, { "": 0 }, { "": 0 }, { "": 0 } ]
+          ]
+        },
+        { "pgm": "2-2", "label": "Shut up and Dance" }
+      ]
+    },
+
     { 
       "name" : "Valeton GP-150",
       "id" : "gp",
