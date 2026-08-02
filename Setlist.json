@@ -194,14 +194,26 @@
         { "pgm": "14", "label": "" },
         { "pgm": "15", "label": "" },
 
+        { "pgm": "26", "label": "HIG EV51" },
+        { "pgm": "27", "label": "CLN ST HW" },
+        { "pgm": "28", "label": "UCL ST HW" },
+        { "pgm": "29", "label": "ODR ST HW" },
+        { "pgm": "30", "label": "ODR J9" },
+
+        { "pgm": "31", "label": "CLN ST SO100" },
+        { "pgm": "32", "label": "UCL ST SO100" },
+        { "pgm": "33", "label": "ODR ST SO100" },
+        { "pgm": "34", "label": "HIG ST SO100" },
+
         { "pgm": "50", "label": "CLN Funk" },
         { "pgm": "51", "label": "UCL Matchless" },
         { "pgm": "52", "label": "ODR J8" },
         { "pgm": "53", "label": "SOLO J8" },
         { "pgm": "54", "label": "Don't know why" },
+
         { "pgm": "55", "label": "Don't start now" },
-        { "pgm": "51", "label": "Get LUCKY" },
-        { "pgm": "52", "label": "The Door" },
+        { "pgm": "56", "label": "Get LUCKY" },
+        { "pgm": "57", "label": "The Door" },
 
         { "pgm": "60", "label": "CLN A1 Match" },
         { "pgm": "61", "label": "UCL A1 Arc" },
@@ -349,7 +361,7 @@
 
     { "name": "CN",
       "songs": [
-        { "title": "7 Nation Army",           "kp": "11-5", "gp": "9" },
+        { "title": "7 Nation Army",           "kp": "11-5", "gp": "9", "notes": "E C B" },
         { "title": "99 Luftballons",          "kp": "12-3", "gp": "9" },
         { "title": "All the small things",    "kp": "11-5", "gp": "10" },
         { "title": "Alperose",                "kp": "11-2", "gp": "9", "capo": "II" },

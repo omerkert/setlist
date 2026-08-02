@@ -200,13 +200,14 @@
     const device = presetsAndSetlists.getCurrentDevice();
     const presets = device ? device.getPresetsForBank(selectedBank || currentBank) : [];
     
-    presets.forEach((preset, idx) => {
+    presets.forEach((preset) => {
       const row = document.createElement('div');
       row.className = 'preset';
-      if(currentPreset===preset) {
+      if (currentPreset === preset) {
         row.classList.add('active');
       }
-      row.dataset.idx = String(preset.index);
+      row.dataset.deviceId = device && device.id ? device.id : '';
+      row.dataset.presetKey = `${preset.pgm}:${preset.label}`;
       const info = document.createElement('div');
       info.innerHTML = `<div class='pgm'>${preset.pgm}</div><div class="presetTitle">${preset.label}</div>`;
       row.appendChild(info);
@@ -228,7 +229,8 @@
       if (currentPreset === preset) {
         row.classList.add('active');
       }
-      row.dataset.idx = String(preset.index);
+      row.dataset.deviceId = presetsAndSetlists.getCurrentDevice() && presetsAndSetlists.getCurrentDevice().id ? presetsAndSetlists.getCurrentDevice().id : '';
+      row.dataset.presetKey = `${preset.pgm}:${preset.label}`;
       const info = document.createElement('div');
       info.innerHTML = `
         <div class="cardHeader">
@@ -247,11 +249,25 @@
   }
 
   function highlightPreset(rowDiv) {
-    //console.info("highlightPreset - rowDiv=", rowDiv);
+    if (!rowDiv) return;
     const nodes = els.setlist.querySelectorAll('.preset');
     nodes.forEach(n => n.classList.remove('active'));
     rowDiv.classList.add('active');
     ensureVisible(rowDiv);
+  }
+
+  function findPresetRowForCurrentDevice(preset) {
+    if (!preset) return null;
+    const activeDevice = presetsAndSetlists.getCurrentDevice();
+    const activeDeviceId = activeDevice && activeDevice.id ? activeDevice.id : '';
+    const presetKey = `${preset.pgm}:${preset.label}`;
+    const rows = els.setlist.querySelectorAll('.preset');
+    for (const row of rows) {
+      if (row.dataset.deviceId === activeDeviceId && row.dataset.presetKey === presetKey) {
+        return row;
+      }
+    }
+    return null;
   }
 
   /** depending on displayMode render either PRESETs or SETLIST */
@@ -441,10 +457,14 @@
       currentBank = currentPresetBank;
       renderBankSelector(currentBank);
       renderPresets(currentBank);
-      //console.info("switchToPreset - highlighting preset in UI - preset.index=", preset.index);
-      highlightPreset(els.setlist.querySelector(`.preset[data-idx="${preset.index}"]`));
+      const nextRow = findPresetRowForCurrentDevice(preset);
+      highlightPreset(nextRow);
     } else if (currentDisplayMode === MODE_CARDS) {
-      highlightPreset(els.setlist.querySelector(`.preset.card-view[data-idx="${preset.index}"]`));
+      const nextRow = findPresetRowForCurrentDevice(preset);
+      if (nextRow) {
+        nextRow.classList.add('card-view');
+      }
+      highlightPreset(nextRow);
     }
 
     const useBank = true, oneBased = true;
