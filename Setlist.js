@@ -44,6 +44,7 @@
 
   let currentBank = null;
   let currentPreset = null;
+  let currentPresetBank = 1;
 
   let displayModeBeforeSolo = null;
   let presetBeforeSolo = null;
@@ -163,6 +164,7 @@
 
   function renderBankSelector(selectedBank) {
     currentBank = selectedBank;
+    currentPresetBank = selectedBank || currentPresetBank || 1;
     
     els.presetBankSelectorBar.innerHTML = '';    
     const banks = presetsAndSetlists.getUniqueBanksForCurrentDevice();
@@ -260,8 +262,9 @@
       els.setlist.classList.remove('cardsMode');
       els.setlistGrid.classList.remove('cardsMode');
       els.notes.style.display = '';
-      renderBankSelector(currentPreset ? currentPreset.bank : 1);
-      renderPresets(currentPreset ? currentPreset.bank : 1);
+      const bankToRender = currentPresetBank || (currentPreset ? currentPreset.bank : 1);
+      renderBankSelector(bankToRender);
+      renderPresets(bankToRender);
     } else if (currentDisplayMode === MODE_CARDS) {
       els.presetBankSelectorBar.style.display = 'none';
       els.setlist.classList.add('cardsMode');
@@ -404,8 +407,9 @@
     if (currentDisplayMode === MODE_SETLIST) {
       renderSongs();
     } else if (currentDisplayMode === MODE_PRESET) {
-      renderBankSelector(currentPreset ? currentPreset.bank : 1);
-      renderPresets(currentPreset ? currentPreset.bank : 1);
+      const bankToRender = currentPresetBank || (currentPreset ? currentPreset.bank : 1);
+      renderBankSelector(bankToRender);
+      renderPresets(bankToRender);
     } else if (currentDisplayMode === MODE_CARDS) {
       renderCards();
     }
@@ -429,8 +433,12 @@
     currentPreset = preset;
     activeEffectGroupIndex = 0;
 
+    if (preset && Number.isInteger(preset.bank)) {
+      currentPresetBank = preset.bank;
+    }
+
     if (currentDisplayMode === MODE_PRESET) {
-      currentBank = preset.bank;
+      currentBank = currentPresetBank;
       renderBankSelector(currentBank);
       renderPresets(currentBank);
       //console.info("switchToPreset - highlighting preset in UI - preset.index=", preset.index);
@@ -529,8 +537,8 @@
         'REV':     'fx-rev',
         'BST':     'fx-bst',
       };
-      if (hasLabel && labelColorMap[label]) {
-        btn.classList.add(labelColorMap[label]);
+      if (hasLabel) {
+        btn.classList.add(labelColorMap[label] || 'fx-default');
       }
       const isOn = Number(config && config.state) === 1;
       const isDisabled = Boolean(config && config.isDisabled) || !hasLabel;

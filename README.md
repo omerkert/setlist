@@ -68,4 +68,16 @@
 
 # NEXT / TODO
 
-* ...
+* add concept of "universal presets" ("up"):
+  * ACC - accoustic guitar (Taylor GT)
+  * CLN - clean
+  * UCL - un-clean
+  * DRV - driven / overdrive
+  * HIG - high-gain
+  * SOL - solo
+  * assign "uv" to each song so no device specific preset is required
+  * define mapping for each device + band + UV => preset - e.g. kemper + UJ + CLN => 1-1
+  * or even "device only", i.e. independent of "band"?
+  * or per device + guitar (e.g. SC - single coil vs. HB - humbucker)?
+
+

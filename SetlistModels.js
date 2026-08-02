@@ -22,12 +22,14 @@ class Device {
     this.modEffectsCc = Array.isArray(data['modEffects-cc'])
       ? data['modEffects-cc'].map((cc) => Number(cc)).filter(Number.isFinite)
       : [];
-    console.log(`Device created: name="${this.name}", id="${this.id}", description="${this.description}", tunerCc="${this.tunerCc}", effectGroupCount="${this.effects.length}"`);
+    const bankSizeValue = Number(data['bank-size'] ?? data.bankSize);
+    this.bankSize = Number.isFinite(bankSizeValue) && bankSizeValue > 0 ? bankSizeValue : null;
+    console.log(`Device created: name="${this.name}", id="${this.id}", description="${this.description}", tunerCc="${this.tunerCc}", effectGroupCount="${this.effects.length}", bankSize="${this.bankSize ?? 'n/a'}"`);
     const midiOutIds = data['midi-out-id'] || data.midiOutId || [];
     this.midiOutIds = Array.isArray(midiOutIds)
       ? midiOutIds.filter(Boolean).map(String)
       : (midiOutIds ? [String(midiOutIds)] : []);
-    this.presets = (data.presets || []).map(preset => new Preset(preset));
+    this.presets = (data.presets || []).map(preset => new Preset(preset, this.bankSize));
     
     // Set index and navigation for presets within this device
     this.presets.forEach((preset, index) => {
@@ -99,10 +101,26 @@ class Device {
  * preset or "patch" or "program"
  */
 class Preset {
-  constructor(data = {}) {
-    this.pgm = data.pgm || '';
-    this.bank = parseInt(this.pgm.split('-')[0] || 0);
-    this.indexInBank = parseInt(this.pgm.split('-')[1]) || 0;
+  constructor(data = {}, bankSize = null) {
+    this.pgm = data.pgm !== undefined && data.pgm !== null ? String(data.pgm) : '';
+    this.bankSize = Number.isFinite(Number(bankSize)) && Number(bankSize) > 0 ? Number(bankSize) : null;
+    this.bank = 0;
+    this.indexInBank = 0;
+
+    const pgmText = this.pgm.trim();
+    if (pgmText.includes('-')) {
+      const [bankText, indexText] = pgmText.split('-');
+      this.bank = parseInt(bankText, 10) || 0;
+      this.indexInBank = parseInt(indexText, 10) || 0;
+    } else if (this.bankSize) {
+      const presetNumber = parseInt(pgmText, 10);
+      if (Number.isFinite(presetNumber) && presetNumber > 0) {
+        this.bank = Math.floor((presetNumber - 1) / this.bankSize) + 1;
+        this.indexInBank = ((presetNumber - 1) % this.bankSize) + 1;
+      }
+    } else {
+      this.bank = parseInt(pgmText, 10) || 0;
+    }
 
     this.label = data.label || '';
 
@@ -130,13 +148,14 @@ class Preset {
     this.bankLSB = data.bankLSB;
   }
 
-  // e.g. 2-1 => (2-1)*5 + 1 = 6 or 1-1 => (1-1)*5 + 1 = 1
+  // e.g. 2-1 => (2-1)*bankSize + 1 = 6 when bankSize is 5
   calculatePatchIndex() {
     if (this.pgm.includes('-')) {
       const parts = this.pgm.split('-');
       const before = parseInt(parts[0], 10);
       const after = parseInt(parts[1], 10);
-      return (before-1) * 5 + after;
+      const size = this.bankSize && this.bankSize > 0 ? this.bankSize : 5;
+      return (before - 1) * size + after;
     }
     return parseInt(this.pgm, 10);
   }
