@@ -626,7 +626,10 @@
     els.setlist.innerHTML = '';
     const songsToRender = getSongsToRender();
     songsToRender.forEach((s, idx) => {
-      if (s.isBreak && s.isBreak()) els.setlist.appendChild(document.createElement('hr'));
+      if (s.isBreak && s.isBreak()) {
+        els.setlist.appendChild(document.createElement('hr'));
+        return;
+      }
       const row = document.createElement('div');
       const classes = ['song'];
       if (s.hasNoPause && s.hasNoPause()) classes.push('no-pause');

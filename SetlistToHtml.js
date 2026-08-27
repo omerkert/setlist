@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
-// Get setlist name from command-line argument
+// Get setlist name and optional device ID from command-line arguments
 const setlistName = process.argv[2];
+const deviceId = process.argv[3] ? process.argv[3].toLowerCase() : null;
 
 if (!setlistName) {
-    console.error('Usage: node SetlistToHtml.js <setlist-name>');
-    console.error('Example: node SetlistToHtml.js "UJ FULL"');
+    console.error('Usage: node SetlistToHtml.js <setlist-name> [deviceId]');
+    console.error('Example: node SetlistToHtml.js "UJ FULL" kp');
     process.exit(1);
 }
 
@@ -141,19 +142,26 @@ const htmlContent = `<!DOCTYPE html>
         <div class="setlist-header">${bandName} - ${setlistName}</div>
 ${targetSetlist.songs.map(song => {
                 const bandSong = bandSongs.find(bs => bs.title.toLowerCase() === song.title.toLowerCase());
-                const patchValue = song.kp !== undefined
-                    ? song.kp
-                    : (bandSong && bandSong.kp !== undefined ? bandSong.kp : (bandSong && bandSong.pgm ? bandSong.pgm : ''));
+                const explicitDevicePatch = deviceId ? song[deviceId] : undefined;
+                const explicitLegacyPatch = deviceId && bandSong ? bandSong[deviceId] : undefined;
+                const patchValue = explicitDevicePatch !== undefined
+                    ? explicitDevicePatch
+                    : (explicitLegacyPatch !== undefined
+                        ? explicitLegacyPatch
+                        : (bandSong && bandSong.pgm ? bandSong.pgm : ''));
                 const songCapo = song.capo || (bandSong && bandSong.capo) || '';
                 const songKey = song.key || (bandSong && bandSong.key) || '';
 
-                const breakLine = song.break ? '        <hr/>\n' : '';
+                const titleIsBreak = typeof song.title === 'string' && song.title.trim().toLowerCase() === 'break';
+                if (titleIsBreak || song.break) {
+                    return '        <hr/>';
+                }
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
                 const keyLine = songKey ? `<span class="key-flag">${songKey}</span>` : '';
                 const capoLine = songCapo ? `<span class="capo-flag">${songCapo}</span>` : '';
                 const pgmLine = patchValue ? `<span class="song-pgm">${patchValue}</span>` : '';
 
-                return `${breakLine}        <div class="song-row"><span class="song-title">${song.title}${keyLine}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
+                return `        <div class="song-row"><span class="song-title">${song.title}${keyLine}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
             }).join('\n')}
     </div>
 </body>
@@ -163,6 +171,14 @@ ${targetSetlist.songs.map(song => {
 const outputPath = path.join(__dirname, 'Setlist-Rendered.html');
 fs.writeFileSync(outputPath, htmlContent, 'utf8');
 
+const visibleSongCount = targetSetlist.songs.filter(song => {
+    const titleIsBreak = typeof song.title === 'string' && song.title.trim().toLowerCase() === 'break';
+    return !titleIsBreak && !song.break;
+}).length;
+
 console.log(`HTML file created: ${outputPath}`);
 console.log(`Setlist: ${bandName} - ${setlistName}`);
-console.log(`Total songs: ${targetSetlist.songs.length}`);
+if (deviceId) {
+    console.log(`Device ID: ${deviceId}`);
+}
+console.log(`Total songs: ${visibleSongCount}`);

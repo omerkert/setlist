@@ -178,7 +178,6 @@ class Band {
       key: song.key || '',
       capo: song.capo || '',
       notes: song.notes || '',
-      break: song.break || 0,
       noPause: song.noPause !== undefined ? song.noPause : (song['no-pause'] || 0),
       'no-pause': song['no-pause'] !== undefined ? song['no-pause'] : (song.noPause || 0),
       GT1: song.GT1 || ''
@@ -244,6 +243,9 @@ class Song {
 
     this.notes = data.notes !== undefined ? data.notes : (bandDefaults.notes || '');
     this.break = data.break !== undefined ? data.break : (bandDefaults.break || 0);
+    if (this.title && this.title.trim().toLowerCase() === 'break') {
+      this.break = 1;
+    }
     this.noPause = data['no-pause'] !== undefined ? data['no-pause'] : (data.noPause !== undefined ? data.noPause : (bandDefaults.noPause || 0));
     this.capo = data.capo !== undefined ? data.capo : (bandDefaults.capo || '');
     this.key = data.key !== undefined ? data.key : (bandDefaults.key || '');
@@ -288,7 +290,8 @@ class Song {
   }
 
   isBreak() {
-    return this.break > 0;
+    const titleIsBreak = typeof this.title === 'string' && this.title.trim().toLowerCase() === 'break';
+    return titleIsBreak || Number(this.break) > 0;
   }
 
   hasNoPause() {
