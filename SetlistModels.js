@@ -685,7 +685,7 @@ class PresetsAndSetlists {
         }
 
         // Check 2: Song not in band's master songs list
-        if (setlist.band && !setlist.band.findBandSong(song.title)) {
+        if (setlist.band && !setlist.band.findBandSong(song.title) && !song.isBreak()) {
           warnings.push({
             type: 'MISSING_BAND_SONG',
             message: `Song not found in band's master songs list for setlist "${setlist.name}"`,
