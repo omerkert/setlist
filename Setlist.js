@@ -36,8 +36,8 @@
   let currentSetlist = null;
 
   // TODO: add "SONGLIST" mode - list of all sorted songs (only setlist entries, not all presets)
-  const MODE_SETLIST = 'SETLIST', MODE_SONGS = 'SONGS', MODE_BANK = 'BANK', MODE_CARDS = 'CARDS';
-  const displayModes = [ MODE_SETLIST, MODE_SONGS, MODE_BANK, MODE_CARDS ];
+  const MODE_SETLIST = 'SETLIST', MODE_SONGS = 'SONGS', MODE_BANKS = 'BANKS', MODE_CARDS = 'CARDS';
+  const displayModes = [ MODE_SETLIST, MODE_SONGS, MODE_BANKS, MODE_CARDS ];
   let currentDisplayMode = MODE_SETLIST;
 
   let currentSong = null;
@@ -276,7 +276,7 @@
     els.setlist.classList.remove('cardsMode', 'songsMode');
     els.setlistGrid.classList.remove('cardsMode', 'songsMode');
 
-    if (currentDisplayMode === MODE_BANK) {
+    if (currentDisplayMode === MODE_BANKS) {
       els.presetBankSelectorBar.style.display = 'block';
       els.notes.style.display = '';
       const bankToRender = currentPresetBank || (currentPreset ? currentPreset.bank : 1);
@@ -365,14 +365,14 @@
   function pcToPreset(pc) {
     switch (pc) {
       case 0: // BANK-1 => previous song OR previous direct preset
-        if(currentDisplayMode===MODE_BANK) {
+        if(currentDisplayMode===MODE_BANKS) {
           presetPrevious();
         } else {
           songPrevious();
         }
         return;
       case 1: // BANK-1 => next song OR next direct preset
-        if(currentDisplayMode===MODE_BANK) {
+        if(currentDisplayMode===MODE_BANKS) {
           presetNext();
         } else {
           songNext();
@@ -427,7 +427,7 @@
     }
     if (currentDisplayMode === MODE_SETLIST) {
       renderSongs();
-    } else if (currentDisplayMode === MODE_BANK) {
+    } else if (currentDisplayMode === MODE_BANKS) {
       const bankToRender = currentPresetBank || (currentPreset ? currentPreset.bank : 1);
       renderBankSelector(bankToRender);
       renderPresets(bankToRender);
@@ -460,7 +460,7 @@
       currentPresetBank = preset.bank;
     }
 
-    if (currentDisplayMode === MODE_BANK) {
+    if (currentDisplayMode === MODE_BANKS) {
       currentBank = currentPresetBank;
       renderBankSelector(currentBank);
       renderPresets(currentBank);
@@ -632,37 +632,54 @@
   function getBandSongsToRender() {
     if (!currentSetlist) return [];
     const band = currentSetlist.band;
-    const bandSongs = band && Array.isArray(band.bandSongs) ? band.bandSongs : currentSetlist.songs;
-    return [...bandSongs].sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
+    const bandSongs = band && Array.isArray(band.bandSongs) ? band.bandSongs : [];
+    const unique = new Map();
+    for (const song of bandSongs) {
+      const title = String(song && song.title ? song.title : '').trim();
+      if (!title || title.toLowerCase() === 'break') continue;
+      const key = title.toLowerCase();
+      if (!unique.has(key)) {
+        unique.set(key, song);
+      }
+    }
+    return [...unique.values()].sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
   }
 
   function getSongPatchLabel(song) {
     if (!song) return '';
     const currentDevice = presetsAndSetlists && presetsAndSetlists.getCurrentDevice ? presetsAndSetlists.getCurrentDevice() : null;
-    const matchingSetlistSong = currentSetlist && currentSetlist.findSongByTitle ? currentSetlist.findSongByTitle(song.title) : null;
-    if (matchingSetlistSong && typeof matchingSetlistSong.getPreset === 'function') {
-      const label = matchingSetlistSong.getPreset(currentDevice);
-      if (label) return String(label);
+    if (!currentDevice || !currentDevice.id) {
+      return song.pgm ? String(song.pgm) : (song.kp ? String(song.kp) : '');
     }
-    if (song && typeof song.getPreset === 'function') {
-      const label = song.getPreset(currentDevice);
-      if (label) return String(label);
+
+    const deviceId = currentDevice.id;
+    const deviceValue = song[deviceId] !== undefined ? song[deviceId] : (song[deviceId.toUpperCase()] !== undefined ? song[deviceId.toUpperCase()] : null);
+    if (deviceValue !== null && deviceValue !== undefined && deviceValue !== '') {
+      return String(deviceValue);
     }
-    return song.pgm ? String(song.pgm) : '';
+
+    if (song.getPreset && typeof song.getPreset === 'function') {
+      const value = song.getPreset(currentDevice);
+      if (value) return String(value);
+    }
+
+    return song.pgm ? String(song.pgm) : (song.kp ? String(song.kp) : '');
   }
 
   function renderBandSongs() {
     els.setlist.innerHTML = '';
     const songsToRender = getBandSongsToRender();
     songsToRender.forEach((song) => {
+      const title = String(song && song.title ? song.title : '').trim();
+      if (!title || title.toLowerCase() === 'break') return;
       const row = document.createElement('div');
       const classes = ['song', 'song-card-view'];
-      const matchingSong = currentSetlist && currentSetlist.findSongByTitle(song.title);
+      const matchingSong = currentSetlist && currentSetlist.findSongByTitle(title);
       if (currentSong && matchingSong && currentSong.title === matchingSong.title) {
         classes.push('active');
       }
       row.className = classes.join(' ');
-      row.dataset.title = String(song.title || '');
+      row.dataset.title = title;
       row.dataset.idx = matchingSong && Number.isInteger(matchingSong.index) ? String(matchingSong.index) : '';
 
       const keyLabel = song.key ? `<span class="key-tag">${song.key}</span>` : '';
@@ -672,7 +689,7 @@
       info.innerHTML = `
         <div class="songCardHeader">
           <div class="songTitleRow">
-            <div class="songTitle">${song.title}</div>
+            <div class="songTitle">${title}</div>
             <div class="songCardMeta">${keyLabel}${capoLabel}</div>
           </div>
           <span class='pgm'>${patchLabel}</span>
@@ -772,7 +789,7 @@
   });    
 
   function toggleDisplayMode() {
-    const order = [ MODE_SETLIST, MODE_BANK, MODE_SONGS, MODE_CARDS ];
+    const order = [ MODE_SETLIST, MODE_BANKS, MODE_SONGS, MODE_CARDS ];
     const currentIndex = order.indexOf(currentDisplayMode);
     const nextIndex = (currentIndex + 1) % order.length;
     changeDisplayMode(order[nextIndex]);
@@ -784,7 +801,7 @@
     if(isSoloSelected) {
       // switch back to the mode that was selected when SOLO was pressed
       changeDisplayMode(displayModeBeforeSolo);
-      if(currentDisplayMode === MODE_BANK) {
+      if(currentDisplayMode === MODE_BANKS) {
         switchToPreset(presetBeforeSolo);
       } else if(currentDisplayMode === MODE_CARDS || currentDisplayMode === MODE_SONGS) {
         switchToPreset(presetBeforeSolo);
@@ -801,12 +818,12 @@
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
       displayModeBeforeSolo = currentDisplayMode;
 
-      if(currentDisplayMode === MODE_BANK || currentDisplayMode === MODE_CARDS) { 
+      if(currentDisplayMode === MODE_BANKS || currentDisplayMode === MODE_CARDS) { 
         presetBeforeSolo = currentPreset;
       }
       const soloPreset = currentSetlist.getSoloPresetForDevice(presetsAndSetlists.getCurrentDevice(), presetsAndSetlists);
-      if(currentDisplayMode !== MODE_BANK) { 
-        changeDisplayMode(MODE_BANK);
+      if(currentDisplayMode !== MODE_BANKS) { 
+        changeDisplayMode(MODE_BANKS);
       }
       switchToPreset(soloPreset || currentSetlist.soloPreset);
       els.soloToggle.classList.add('active');
@@ -891,7 +908,7 @@
 
   // Keyboard navigation for presets (only in preset mode)
   document.addEventListener('keydown', (e) => {
-    if (currentDisplayMode === MODE_BANK && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (currentDisplayMode === MODE_BANKS && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       e.stopPropagation();
       const presets = getPresetsForBank(currentPresetBank);
