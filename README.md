@@ -7,10 +7,10 @@
 # Basic Concepts
 
 ## Display Modes 
-* 2 displayModes: MODE_SETLIST (default) and MODE_PRESET
+* 2 displayModes: MODE_SETLIST (default) and MODE_BANK
 * when switching from
-  * SETLIST to PRESET: the preset selected by the last song selected in the setlist is selected
-  * PRESET to SETLIST: the last song that has been selected in the setlist (before switching) is selected
+  * SETLIST to BANK: the preset selected by the last song selected in the setlist is selected
+  * BANK to SETLIST: the last song that has been selected in the setlist (before switching) is selected
 * on preset change (via songlist or presetlist):
   * effect buttons are reset
 
@@ -31,8 +31,8 @@
     * list of songs, each with a preset - PREV/NEXT step through the list
 
 ## SOLO button
-* ON : switch to SOLO-BANK + SOLO-PRESET and change to PRESET MODE
-* OFF: switch back to SONG or PRESET that was selected when SOLO was pressed
+* ON : switch to SOLO-BANK + SOLO-PRESET and change to BANK MODE
+* OFF: switch back to SONG or BANK that was selected when SOLO was pressed
 
 
 # Advanced Concepts

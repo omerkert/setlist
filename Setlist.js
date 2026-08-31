@@ -36,8 +36,8 @@
   let currentSetlist = null;
 
   // TODO: add "SONGLIST" mode - list of all sorted songs (only setlist entries, not all presets)
-  const MODE_SETLIST = 'SETLIST', MODE_PRESET = 'PRESET', MODE_CARDS = 'CARDS';
-  const displayModes = [ MODE_SETLIST, MODE_PRESET, MODE_CARDS ];
+  const MODE_SETLIST = 'SETLIST', MODE_BANKS = 'BANKS', MODE_CARDS = 'CARDS';
+  const displayModes = [ MODE_SETLIST, MODE_BANKS, MODE_CARDS ];
   let currentDisplayMode = MODE_SETLIST;
 
   let currentSong = null;
@@ -83,7 +83,7 @@
     }
 
     /*
-    if(currentDisplayMode === MODE_PRESET && !soloChange) {
+    if(currentDisplayMode === MODE_BANK && !soloChange) {
       displayModeBeforeSolo = null;
       const presets = getPresetsForBank(currentPresetBank);
       if (presets.length > 0) {
@@ -118,7 +118,7 @@
         midiCtrl.refreshMidiOut();
       }
 
-      //changeDisplayMode(MODE_PRESET);
+      //changeDisplayMode(MODE_BANK);
 
     } catch (error) {
       console.error('Failed to load setlist:', error);
@@ -273,7 +273,7 @@
   /** depending on displayMode render either PRESETs or SETLIST */
   function renderSetlistOrPresets() {
     //console.log("render - currentDisplayMode=", currentDisplayMode);
-    if (currentDisplayMode === MODE_PRESET) {
+    if (currentDisplayMode === MODE_BANKS) {
       els.presetBankSelectorBar.style.display = 'block';
       els.setlist.classList.remove('cardsMode');
       els.setlistGrid.classList.remove('cardsMode');
@@ -360,14 +360,14 @@
   function pcToPreset(pc) {
     switch (pc) {
       case 0: // BANK-1 => previous song OR previous direct preset
-        if(currentDisplayMode===MODE_PRESET) {
+        if(currentDisplayMode===MODE_BANKS) {
           presetPrevious();
         } else {
           songPrevious();
         }
         return;
       case 1: // BANK-1 => next song OR next direct preset
-        if(currentDisplayMode===MODE_PRESET) {
+        if(currentDisplayMode===MODE_BANKS) {
           presetNext();
         } else {
           songNext();
@@ -422,7 +422,7 @@
     }
     if (currentDisplayMode === MODE_SETLIST) {
       renderSongs();
-    } else if (currentDisplayMode === MODE_PRESET) {
+    } else if (currentDisplayMode === MODE_BANKS) {
       const bankToRender = currentPresetBank || (currentPreset ? currentPreset.bank : 1);
       renderBankSelector(bankToRender);
       renderPresets(bankToRender);
@@ -453,7 +453,7 @@
       currentPresetBank = preset.bank;
     }
 
-    if (currentDisplayMode === MODE_PRESET) {
+    if (currentDisplayMode === MODE_BANKS) {
       currentBank = currentPresetBank;
       renderBankSelector(currentBank);
       renderPresets(currentBank);
@@ -692,7 +692,7 @@
   });    
 
   function toggleDisplayMode() {
-    const newMode = currentDisplayMode === MODE_SETLIST ? MODE_PRESET : MODE_SETLIST;
+    const newMode = currentDisplayMode === MODE_SETLIST ? MODE_BANKS : MODE_SETLIST;
     changeDisplayMode(newMode);
   }
 
@@ -702,7 +702,7 @@
     if(isSoloSelected) {
       // switch back to the mode that was selected when SOLO was pressed
       changeDisplayMode(displayModeBeforeSolo);
-      if(currentDisplayMode === MODE_PRESET) {
+      if(currentDisplayMode === MODE_BANKS) {
         switchToPreset(presetBeforeSolo);
       } else if(currentDisplayMode === MODE_CARDS) {
         switchToPreset(presetBeforeSolo);
@@ -719,12 +719,12 @@
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
       displayModeBeforeSolo = currentDisplayMode;
 
-      if(currentDisplayMode === MODE_PRESET || currentDisplayMode === MODE_CARDS) { 
+      if(currentDisplayMode === MODE_BANKS || currentDisplayMode === MODE_CARDS) { 
         presetBeforeSolo = currentPreset;
       }
       const soloPreset = currentSetlist.getSoloPresetForDevice(presetsAndSetlists.getCurrentDevice(), presetsAndSetlists);
-      if(currentDisplayMode !== MODE_PRESET) { 
-        changeDisplayMode(MODE_PRESET);
+      if(currentDisplayMode !== MODE_BANKS) { 
+        changeDisplayMode(MODE_BANKS);
       }
       switchToPreset(soloPreset || currentSetlist.soloPreset);
       els.soloToggle.classList.add('active');
@@ -809,7 +809,7 @@
 
   // Keyboard navigation for presets (only in preset mode)
   document.addEventListener('keydown', (e) => {
-    if (currentDisplayMode === MODE_PRESET && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (currentDisplayMode === MODE_BANKS && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       e.stopPropagation();
       const presets = getPresetsForBank(currentPresetBank);
