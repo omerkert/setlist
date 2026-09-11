@@ -43,4 +43,16 @@ if (JSON.stringify(secondBank) !== JSON.stringify(['6', '7', '8', '9', '10'])) {
   throw new Error(`Expected second bank to contain 6..10, got ${JSON.stringify(secondBank)}`);
 }
 
+if (firstPreset.prev !== tenthPreset || firstPreset.next !== device.getPreset(1)) {
+  throw new Error('Expected first preset navigation to roll over to the last preset');
+}
+
+if (device.getPreset(4).next !== device.getPreset(5) || device.getPreset(5).prev !== device.getPreset(4)) {
+  throw new Error('Expected navigation to cross the bank boundary');
+}
+
+if (tenthPreset.prev !== device.getPreset(8) || tenthPreset.next !== firstPreset) {
+  throw new Error('Expected navigation to cross the bank boundary and roll over');
+}
+
 console.log('bank grouping test passed');

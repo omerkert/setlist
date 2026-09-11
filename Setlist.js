@@ -789,7 +789,7 @@
   });    
 
   function toggleDisplayMode() {
-    const order = [ MODE_SETLIST, MODE_BANKS, MODE_SONGS, MODE_CARDS ];
+    const order = [ MODE_SETLIST, MODE_BANKS /*, MODE_SONGS, MODE_CARDS */ ];
     const currentIndex = order.indexOf(currentDisplayMode);
     const nextIndex = (currentIndex + 1) % order.length;
     changeDisplayMode(order[nextIndex]);

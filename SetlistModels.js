@@ -31,17 +31,11 @@ class Device {
       : (midiOutIds ? [String(midiOutIds)] : []);
     this.presets = (data.presets || []).map(preset => new Preset(preset, this.bankSize));
     
-    // Set index and navigation for presets within this device
+    // Set index and circular navigation for presets within this device
     this.presets.forEach((preset, index) => {
       preset.index = index;
-      // Consider bank navigation within the device
-      const currentBank = preset.bank;
-      preset.prev = index > 0 && preset.bank === this.presets[index - 1].bank 
-        ? this.presets[index - 1] 
-        : this.presets[index + 4] < this.presets.length ? this.presets[index + 4] : null;
-      preset.next = index < this.presets.length - 1 && preset.bank === this.presets[index + 1].bank 
-        ? this.presets[index + 1] 
-        : index - 4 >= 0 ? this.presets[index - 4] : null;
+      preset.prev = this.presets.length > 0 ? this.presets[(index - 1 + this.presets.length) % this.presets.length] : null;
+      preset.next = this.presets.length > 0 ? this.presets[(index + 1) % this.presets.length] : null;
     });
   }
 
@@ -397,11 +391,9 @@ class PresetsAndSetlists {
       this.presets.push(...device.presets);
     });
     
-    // Set index for flat presets array
+    // Set flat-list indexes without replacing each device's circular navigation.
     this.presets.forEach((preset, index) => {
       preset.index = index;
-      preset.prev = index > 0 && preset.bank===this.presets[index - 1].bank ? this.presets[index - 1] : this.presets[index + 4];
-      preset.next = index < this.presets.length - 1 && preset.bank===this.presets[index + 1].bank ? this.presets[index + 1] : this.presets[index - 4];
     });
 
     // Handle bands structure - create Band instances and their setlists
