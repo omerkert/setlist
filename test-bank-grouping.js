@@ -1,4 +1,4 @@
-const { Setlists } = require('./SetlistModels.js');
+const { Setlists, Preset } = require('./SetlistModels.js');
 
 const data = {
   devices: [
@@ -33,6 +33,31 @@ const tenthPreset = device.getPreset(9);
 
 if (JSON.stringify(banks) !== JSON.stringify([1, 2])) {
   throw new Error(`Expected banks [1,2], got ${JSON.stringify(banks)}`);
+}
+
+const scenePreset = new Preset({ pgm: '1-1.6' }, 5);
+if (!scenePreset || scenePreset.sceneIndex !== 6 || scenePreset.calculatePatchIndex() !== 1) {
+  throw new Error('Expected dotted pgm to retain scene index and resolve to its base program');
+}
+
+const sceneDevice = new Setlists({
+  devices: [{
+    id: 'scene-device',
+    presets: [{ pgm: '1-2.6', label: 'Base preset' }]
+  }],
+  bands: []
+}).findDeviceById('scene-device');
+const songScenePreset = sceneDevice.findPresetByPgm('1-2.3');
+if (!songScenePreset || songScenePreset.sceneIndex !== 3 || songScenePreset.calculatePatchIndex() !== 2) {
+  throw new Error('Expected song scene suffix to match the base preset and override its scene');
+}
+
+const sceneOnlyPreset = new Preset({ pgm: '0.6' });
+if (sceneOnlyPreset.sceneIndex !== 6 || sceneOnlyPreset.calculatePatchIndex() !== 0) {
+  throw new Error('Expected a zero-base dotted pgm to select a scene without a preset');
+}
+if (!sceneOnlyPreset.toString().includes('"pgm":"0.6"')) {
+  throw new Error('Expected Preset.toString() to include instance attributes');
 }
 
 if (JSON.stringify(firstBank) !== JSON.stringify(['1', '2', '3', '4', '5'])) {

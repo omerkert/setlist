@@ -46,7 +46,7 @@ class MidiCtrl {
     if (!this.midiAccess) return;
 
     const allInputs = Array.from(this.midiAccess.inputs.values());
-    allInputs.forEach((input) => { console.log(`MIDI-input => ${input.name}`); });
+    allInputs.forEach((input) => { console.log(`Available MIDI-input => ${input.name}`); });
 
     let inputs = allInputs.filter((midiInput) => this.MIDI_INPUT_NAMES.some((name) => midiInput.name.includes(name)));
 
@@ -56,7 +56,7 @@ class MidiCtrl {
     }
 
     inputs.forEach((input) => {
-      //console.log(`MIDI-input ATTACH => ${input.name}`);
+      console.log(`MIDI-input ATTACH => ${input.name}`);
       this.setInStatus(`${input.name}`, input.state === 'connected' ? 'ok' : 'warn');
       input.onmidimessage = (event) => this.handleMidiMessage(event);
     });
@@ -79,6 +79,7 @@ class MidiCtrl {
       const matchedOutput = this.onOutputsChanged(outputs);
       this.midiOut = matchedOutput || null;
       if (this.midiOut) {
+        console.log(`MIDI-output ATTACH => ${this.midiOut.name}`);
         this.setOutStatus(this.midiOut.name, 'ok');
       } else {
         this.setOutStatus('NO OUT', 'err');
@@ -100,12 +101,17 @@ class MidiCtrl {
 
   sendCC(ch1, cc, val, whenMs) {
     if (!this.midiOut) return;
-    const ch0 = (ch1 - 1) & 0x0F; const status = 0xB0 | ch0;
+    const ch0 = (ch1 - 1) & 0x0F;
+    const status = 0xB0 | ch0;
     this.midiOut.send([status, cc & 0x7F, val & 0x7F], whenMs ? performance.now() + whenMs : undefined);
+    console.log(`MIDI CC sent: ch=${ch1}, cc=${cc}, val=${val}, whenMs=${whenMs}`);
   }
 
   sendPC(ch1, prog, whenMs) {
-    if (!this.midiOut) return; const ch0 = (ch1 - 1) & 0x0F; const status = 0xC0 | ch0;
+    if (!this.midiOut) return; 
+    const ch0 = (ch1 - 1) & 0x0F;
+    const status = 0xC0 | ch0;
     this.midiOut.send([status, prog & 0x7F], whenMs ? performance.now() + whenMs : undefined);
+    console.log(`MIDI PC sent: ch=${ch1}, prog=${prog}, whenMs=${whenMs}`);
   }
 }

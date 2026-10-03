@@ -3,10 +3,10 @@ const { Setlists } = require('./SetlistModels');
 
 const data = {
   devices: [
-    { name: 'Kemper Profiler Player', id: 'kp', 'midi-out-id': ['profiler'], presets: [{ pgm: '2-4', label: 'Kemper preset' }] },
-    { name: 'Valeton GP-150', id: 'gp', 'midi-out-id': ['GP-150 MIDI'], presets: [{ pgm: '2-4', label: 'GP preset' }] }
+    { name: 'Kemper Profiler Player', id: 'kp', 'midi-out-id': ['profiler'], 'solo-pgm': '2-4', presets: [{ pgm: '2-4', label: 'Kemper preset' }] },
+    { name: 'Valeton GP-150', id: 'gp', 'midi-out-id': ['GP-150 MIDI'], 'solo-pgm': '2-4', presets: [{ pgm: '2-4', label: 'GP preset' }] }
   ],
-  bands: [{ name: 'Band', setlists: [{ name: 'Solo', cfg: { soloPreset: { kp: '1-3', gp: '2-4' } }, songs: [{ title: 'Song' }] }] }]
+  bands: [{ name: 'Band', setlists: [{ name: 'Solo', songs: [{ title: 'Song' }] }] }]
 };
 
 const model = new Setlists(data);

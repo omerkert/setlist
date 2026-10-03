@@ -6,6 +6,7 @@
       "description": "...",
       "midi-out-id" : [ "profiler" ],
       "tuner-cc" : 31,
+      "solo-pgm" : "1-3",
 
       "effects" : [
         [ 75, 76, 77, 78 ],
@@ -118,6 +119,7 @@
       "description": "Two notes GENOME V2 Windows Application",
       "midi-out-id" : [ "GENOME" ],
       "tuner-cc" : 31,
+      "solo-pgm" : "1-3",
 
       "effects" : [
         [ 75, 76, 77, 78 ]
@@ -167,6 +169,7 @@
       "description": "TODO: effects are currently only switched OFF but not toggled",
       "midi-out-id" : [ "GP-150 MIDI" ],
       "tuner-cc" : "60",
+      "solo-pgm" : "65",
       "effects" : [
         [ 49, 51, 55, 56, 57 ]
       ],
@@ -235,6 +238,7 @@
       "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank (26-PREV, 27-NEXT, 48-FX1, 49-FX2, 50-AMP, 51-NR, 52-CAB, 53-EQ, 54-FX3, 55-DLY, 56-REV, 57 or 60-TUNER)",
       "midi-out-id" : [ "Ampero Mini Subdevice" ],
       "tuner-cc" : "60",
+      "solo-pgm" : "1-3",
       "effects" : [
         [ 48, 49, 53, 54, 55, 56 ]
       ],
@@ -253,18 +257,19 @@
     { "name" : "Fractal FM3",
       "id" : "fm",
       "description": "...",
-      "midi-out-id" : [ "MidiPortA" ],
-      "tuner-cc" : "60",
+      "midi-out-id" : [ "MIDIOUT2" ],
+      "tuner-cc" : "99",
+      "scene-cc" : "34",
+      "solo-pgm" : "3",
       "presets" : [
-        { 
-          "pgm": "1-1", "label": "AC20 CLN CMP",
-          "effects": [ [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "CHR": 0 }, { "DLY": 0 } ] ]
-
-        },
-        { "pgm": "1-2", "label": "AC20 CLN" },
-        { "pgm": "1-3", "label": "AC20 SOLO" },
-        { "pgm": "2-1", "label": "AC20 UCL" },
-        { "pgm": "2-1", "label": "AC20 CRU" }
+        { "pgm": "0", "label": "AC20 CLN" },
+        { "pgm": "1", "label": "AC20 CLN CMP" },
+        { "pgm": "2", "label": "AC20 CLN" },
+        { "pgm": "3", "label": "AC20 SOLO" },
+        { "pgm": "4", "label": "AC20 UCL" },
+        { "pgm": "5", "label": "AC20 CRU" },
+        { "pgm": "6", "label": "AC20 CRU" },
+        { "pgm": "7", "label": "AC20 CRU" }
       ]
     }
   ],
@@ -276,7 +281,7 @@
         { "title": "About Damn Time",   "kp": "1-1", "gp": "50", "am": "1-1" },   
         { "title": "APT",               "kp": "1-5", "gp": "53", "am": "2-1" },
         { "title": "Crazy",             "kp": "1-1", "gp": "50" },
-        { "title": "Deja Vu",           "kp": "1-1", "gp": "50" },
+        { "title": "Deja Vu",           "kp": "1-1", "gp": "50", "fm": "5" },
         { "title": "Don't know why",    "kp": "2-5", "gp": "54", "capo": "III" },
         { "title": "Don't Start Now",   "kp": "2-3", "gp": "55" },
         { "title": "Falling for you",   "kp": "2-2", "gp": "50" },
@@ -292,11 +297,11 @@
         { "title": "Kiss",              "kp": "1-4", "gp": "51" },
         { "title": "Let me love you",   "kp": "2-1", "gp": "50" },
         { "title": "Lost in Music",     "kp": "1-1", "gp": "50" },
-        { "title": "Love Foolosophy",   "kp": "1-1", "gp": "50", "am": "1-1" },
+        { "title": "Love Foolosophy",   "kp": "1-1", "gp": "50", "am": "1-1", "fm": "0.0" },
         { "title": "Man in the mirror", "kp": "1-2", "gp": "50" },
-        { "title": "Mercy",             "kp": "1-4", "gp": "51", "am": "2-1" },
+        { "title": "Mercy",             "kp": "1-4", "gp": "51", "am": "2-1", "fm": "0.3" },
         { "title": "Rolling the deep",  "kp": "1-4", "gp": "51" },
-        { "title": "Sing it back",      "kp": "1-1", "gp": "50" },
+        { "title": "Sing it back",      "kp": "1-1", "gp": "50", "notes": "x6466x xx4446 xx646x xx877x XI" },
         { "title": "So easy to fall",   "kp": "1-1", "gp": "50" },
         { "title": "Stuck in the middle", "kp": "1-4", "gp": "50" },
         { "title": "Sweet 7 Nation",    "kp": "2-4", "gp": "50" },
@@ -306,8 +311,34 @@
         { "title": "Valerie",           "kp": "1-2", "gp": "50" }
       ],
       "setlists": [{
-        "name": "UJ September",
-        "cfg": { "soloPreset": { "kp":"1-3", "gp":"13-5" } },
+        "name": "UJ Richterswil",
+        "songs": [
+          { "title": "Love Foolosophy" },
+          { "title": "Mercy" },
+          { "title": "Deja Vu" },
+          { "title": "Valerie" },
+          { "title": "Crazy" },
+          { "title": "The way you make" },
+          { "title": "Man in the mirror" },
+          { "title": "Rolling the deep" },
+          { "title": "Thank you next" },
+          { "title": "So easy to fall" },
+          { "title": "Kiss" },
+          { "title": "Stuck in the middle" },
+          { "title": "I feel it coming" },
+          { "title": "About Damn Time" },
+          { "title": "Sweet 7 Nation" },
+          { "title": "Flowers" },
+          { "title": "Sing it back" },
+          { "title": "I love your smile" },
+          { "title": "APT" },
+          { "title": "I'm Outta Love" },
+          { "title": "Lost in Music" },
+          { "title": "Freedom! 90" },
+          { "title": "Hard To Handle" }
+        ]
+      }, {
+        "name": "UJ Winterthur",
         "songs": [
           { "title": "Love Foolosophy" },
           { "title": "Mercy" },
@@ -343,7 +374,6 @@
         ]
       }, {
         "name": "UJ FULL",
-        "cfg": { "soloPreset": { "kp":"1-3", "gp":"13-5" } },
         "songs": [
           { "title": "Love Foolosophy" },
           { "title": "Mercy" },
@@ -376,7 +406,6 @@
         ]
       }, {
         "name": "UJ SHORT",
-        "cfg": { "soloPreset": { "kp":"1-3", "gp":"13-5" } },
         "songs": [
           { "title": "Love Foolosophy" },
           { "title": "Mercy" },
@@ -462,8 +491,64 @@
       ],
       "setlists" :[
       {
-        "name": "CN August",
-        "cfg": { "soloPreset": { "kp":"10-3", "gp":"8" } },
+        "name": "CN Reichenau",
+        "songs": [
+          { "title": "Let me entertain you" },
+          { "title": "Dancing on the Ceiling" },
+          { "title": "Kiss" },
+          { "title": "This Love" },
+          { "title": "Bad Guy" },
+          { "title": "Venus" },
+          { "title": "The Letter" },
+          { "title": "Beds are burning" },
+          { "title": "Bad Moon Rising" },
+          { "title": "I want to break free" },
+          { "title": "Crazy little thing" },
+          { "title": "Down Down" },
+          { "title": "Born to be Wild" },
+          { "title": "Dancing in the Dark" },
+          { "title": "Fly Away" },
+          { "title": "Ob-La-Di" },
+          { "title": "Sing" },
+          { "title": "Watermelon Sugar" },
+          { "title": "Love Yourself" },
+          { "title": "Shotgun" },
+          { "title": "Leave your hat on" },
+          { "title": "Honky Tonk Women" },
+          { "title": "Brown Eyed Girl" },
+          { "title": "Baila Morena" },
+          { "title": "99 Luftballons" },          
+          
+          { "title": "BREAK" },
+
+          { "title": "Summer of 69" },
+          { "title": "Another Brick" },
+          { "title": "Running Down a Dream" },
+          { "title": "Gimme all your lovin" },
+          { "title": "Long Train Running" },
+          { "title": "Baby one more time" },
+          { "title": "Cream" },
+          { "title": "Pokerface" },
+          { "title": "Shutup and Dance" },
+          { "title": "Shake it off" },
+          { "title": "All the small things" },
+          { "title": "Sex on Fire" },
+          { "title": "Song 2" },
+          { "title": "Are you gbm girl" },
+          { "title": "Dance with MANDO" },
+          { "title": "Knockin on Hvns Door" },
+          { "title": "Jumping Jack Flash" },
+          { "title": "7 Nation Army" },
+          { "title": "Rocking all over" },
+          { "title": "I love Rock N Roll" },
+          { "title": "Highway to hell" },
+          { "title": "Whats Up (FAST)" },
+          { "title": "Tage wie diese" },
+          { "title": "Angels" }
+        ]
+      },
+      {
+        "name": "CN Arbon",
         "songs": [
           { "title": "Dock of the Bay" },
           { "title": "Sing" },

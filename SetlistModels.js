@@ -1,3 +1,16 @@
+function formatModel(value) {
+  const seen = new WeakSet();
+  return `${value.constructor.name} ${JSON.stringify(value, (key, nestedValue) => {
+    if (nestedValue && typeof nestedValue === 'object') {
+      if (seen.has(nestedValue)) {
+        return '[Circular]';
+      }
+      seen.add(nestedValue);
+    }
+    return nestedValue;
+  })}`;
+}
+
 /**
  * Single guitar/equipment d (e.g., "profiler", "Ampero", "Valeton GP-150")
  * Contains its own set of presets
@@ -8,6 +21,11 @@ class Device {
     this.id = data.id || '';
     this.description = data.description || '';
     this.tunerCc = data['tuner-cc'] !== undefined ? String(data['tuner-cc']) : '';
+    this.soloPresetPgm = data['solo-pgm'] !== undefined ? String(data['solo-pgm']) : '';
+    const sceneCcValue = Number(data['scene-cc']);
+    this.sceneCc = Number.isInteger(sceneCcValue) && sceneCcValue >= 0 && sceneCcValue <= 127
+      ? sceneCcValue
+      : null;
     this.effects = Array.isArray(data.effects)
       ? data.effects.map((group) => {
           if (Array.isArray(group)) {
@@ -51,7 +69,30 @@ class Device {
   }
 
   findPresetByPgm(pgm) {
-    return this.presets.find(preset => preset.pgm === pgm) || null;
+    const requestedPgm = String(pgm ?? '');
+    const requestedBasePgm = requestedPgm.split('.')[0];
+    const preset = this.presets.find((candidate) => candidate.pgm.split('.')[0] === requestedBasePgm) || null;
+    if (!preset) {
+      return null;
+    }
+
+    const sceneMatch = requestedPgm.match(/\.(\d+)$/);
+    if (!sceneMatch || preset.sceneIndex === Number(sceneMatch[1])) {
+      return preset;
+    }
+
+    return Object.assign(Object.create(Object.getPrototypeOf(preset)), preset, {
+      pgm: requestedPgm,
+      sceneIndex: Number(sceneMatch[1])
+    });
+  }
+
+  getSoloPreset(presetsAndSetlist) {
+    if (!this.soloPresetPgm || !presetsAndSetlist) {
+      return null;
+    }
+    return this.findPresetByPgm(this.soloPresetPgm)
+      || presetsAndSetlist.findPresetByPgmInDevice(this.soloPresetPgm, this);
   }
 
   getPresetsForBank(bank) {
@@ -87,6 +128,10 @@ class Device {
       ? group.map((cc) => Number(cc)).filter(Number.isFinite)
       : [];
   }
+
+  toString() {
+    return formatModel(this);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -102,6 +147,8 @@ class Preset {
     this.indexInBank = 0;
 
     const pgmText = this.pgm.trim();
+    const sceneMatch = pgmText.match(/\.(\d+)$/);
+    this.sceneIndex = sceneMatch ? Number(sceneMatch[1]) : null;
     if (pgmText.includes('-')) {
       const [bankText, indexText] = pgmText.split('-');
       this.bank = parseInt(bankText, 10) || 0;
@@ -153,6 +200,10 @@ class Preset {
     }
     return parseInt(this.pgm, 10);
   }
+
+  toString() {
+    return formatModel(this);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -173,8 +224,7 @@ class Band {
       capo: song.capo || '',
       notes: song.notes || '',
       noPause: song.noPause !== undefined ? song.noPause : (song['no-pause'] || 0),
-      'no-pause': song['no-pause'] !== undefined ? song['no-pause'] : (song.noPause || 0),
-      GT1: song.GT1 || ''
+      'no-pause': song['no-pause'] !== undefined ? song['no-pause'] : (song.noPause || 0)
     }));
     
     // Setlists for this band (will be populated by PresetsAndSetlists)
@@ -191,6 +241,10 @@ class Band {
   
   getSetlistCount() {
     return this.setlists.length;
+  }
+
+  toString() {
+    return formatModel(this);
   }
 }
 
@@ -243,7 +297,6 @@ class Song {
     this.noPause = data['no-pause'] !== undefined ? data['no-pause'] : (data.noPause !== undefined ? data.noPause : (bandDefaults.noPause || 0));
     this.capo = data.capo !== undefined ? data.capo : (bandDefaults.capo || '');
     this.key = data.key !== undefined ? data.key : (bandDefaults.key || '');
-    this.GT1 = data.GT1 !== undefined ? data.GT1 : (bandDefaults.GT1 || '');
 
     this.preset = null;
 
@@ -295,6 +348,10 @@ class Song {
   hasCapo() {
     return this.capo && String(this.capo).trim().length > 0;
   }
+
+  toString() {
+    return formatModel(this);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -306,40 +363,16 @@ class Setlist {
   constructor(data = {}, presetsAndSetlist, band = null) {
     this.band = band;
     this.name = data.name || '';
-    const soloPresetConfig = (data.cfg && data.cfg.soloPreset) || '1-3';
-    const soloPresetByDevice = typeof soloPresetConfig === 'object' && soloPresetConfig !== null
-      ? soloPresetConfig
-      : { default: soloPresetConfig };
-    this.cfg = {
-      soloPresetConfig: soloPresetByDevice,
-      soloPresetString: typeof soloPresetConfig === 'string' ? soloPresetConfig : (soloPresetByDevice.default || '1-3')
-    };
-    this.cfg.soloPresetBank = parseInt(this.cfg.soloPresetString.split('-')[0], 10) || 1;
-    this.cfg.soloPresetIndex = parseInt(this.cfg.soloPresetString.split('-')[1], 10) - 1 || 0;
     this.songs = (data.songs || []).map(song => new Song(song, presetsAndSetlist, band));
     this.songs.forEach((song, index) => {
       song.index = index;
       song.prev = index > 0 ? this.songs[index - 1] : null;
       song.next = index < this.songs.length - 1 ? this.songs[index + 1] : null;
     });
-    this.soloPreset = presetsAndSetlist.findPresetByPgm(this.cfg.soloPresetString);
   }
 
   getSoloPresetForDevice(device, presetsAndSetlist) {
-    const deviceId = device && device.id ? device.id : null;
-    const value = deviceId && this.cfg.soloPresetConfig && this.cfg.soloPresetConfig[deviceId]
-      ? this.cfg.soloPresetConfig[deviceId]
-      : (this.cfg.soloPresetConfig && this.cfg.soloPresetConfig.default ? this.cfg.soloPresetConfig.default : this.cfg.soloPresetString);
-    if (!presetsAndSetlist || !value) {
-      return null;
-    }
-    if (device && device.findPresetByPgm) {
-      const devicePreset = device.findPresetByPgm(value);
-      if (devicePreset) {
-        return devicePreset;
-      }
-    }
-    return presetsAndSetlist.findPresetByPgmInDevice(value, device) || presetsAndSetlist.findPresetByPgm(value) || null;
+    return device && device.getSoloPreset ? device.getSoloPreset(presetsAndSetlist) : null;
   }
 
   getSongCount() {
@@ -368,6 +401,10 @@ class Setlist {
 
   getSongsWithBreaks() {
     return this.songs.filter(song => song.isBreak());
+  }
+
+  toString() {
+    return formatModel(this);
   }
 }
 
@@ -758,6 +795,10 @@ class PresetsAndSetlists {
     } else {
       throw new Error('Unable to load file: no file system or fetch available');
     }
+  }
+
+  toString() {
+    return formatModel(this);
   }
 
 }

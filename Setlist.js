@@ -2,6 +2,11 @@
  * Setlist.js - Main logic for setlist management, MIDI communication, and UI interactions.
  */
 (function () {
+
+  function log(message) {
+    console.log(`[Setlist.js] ${message}`);
+  }
+
   let currentPresetIndex = null;
 
   let presetsAndSetlists = null;
@@ -444,6 +449,7 @@
     highlightSong();
     setNotes(song);
     const preset = getPresetForSong(song);
+    log(`switchToSong - song=${song ? song.title : 'null'}, preset=${preset}`);
     if (preset) {
       switchToPreset(preset);
     } else {
@@ -453,20 +459,23 @@
   }
 
   function switchToPreset(preset) {
-    currentPreset = preset;
+    const sceneOnly = Boolean(preset && preset.calculatePatchIndex() === 0);
+    if (!sceneOnly) {
+      currentPreset = preset;
+    }
     activeEffectGroupIndex = 0;
 
-    if (preset && Number.isInteger(preset.bank)) {
+    if (!sceneOnly && preset && Number.isInteger(preset.bank)) {
       currentPresetBank = preset.bank;
     }
 
-    if (currentDisplayMode === MODE_BANKS) {
+    if (!sceneOnly && currentDisplayMode === MODE_BANKS) {
       currentBank = currentPresetBank;
       renderBankSelector(currentBank);
       renderPresets(currentBank);
       const nextRow = findPresetRowForCurrentDevice(preset);
       highlightPreset(nextRow);
-    } else if (currentDisplayMode === MODE_CARDS) {
+    } else if (!sceneOnly && currentDisplayMode === MODE_CARDS) {
       const nextRow = findPresetRowForCurrentDevice(preset);
       if (nextRow) {
         nextRow.classList.add('card-view');
@@ -474,12 +483,16 @@
       highlightPreset(nextRow);
     }
 
+    log(`switchToPreset - preset=${preset ? preset.label : 'null'}, bank=${preset ? preset.bank : 'null'}, pgm=${preset ? preset.pgm : 'null'}`);
+
     const useBank = true, oneBased = true;
     const ch = (preset.channel >= 1 && preset.channel <= 16) ? preset.channel : 1;
     const midiPatch = preset.calculatePatchIndex();
     const prog0 = oneBased ? Math.max(0, Math.min(127, midiPatch - 1)) : Math.max(0, Math.min(127, midiPatch));
-    currentPresetIndex = preset.index;
-    //console.info(`switchToPreset(useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0})`);
+    if (!sceneOnly) {
+      currentPresetIndex = preset.index;
+    }
+    log(`switchToPreset(useBank=${useBank}, oneBased=${oneBased}, ch=${ch}, prog0=${prog0})`);
     let t = 0;
     if (useBank) {
       if (Number.isInteger(preset.bankMSB)) sendCC(ch, 0, preset.bankMSB & 0x7F, t);
@@ -487,9 +500,17 @@
       t += 8;
     }
     if (midiCtrl && midiCtrl.hasOutput()) {
-      sendPC(ch, prog0, t);
+      if (!sceneOnly) {
+        sendPC(ch, prog0, t);
+      }
+      const device = presetsAndSetlists.getCurrentDevice();
+      if (device && Number.isInteger(device.sceneCc) && Number.isInteger(preset.sceneIndex)) {
+        sendCC(ch, device.sceneCc, preset.sceneIndex-1, t + 4);
+      }
     }
-    updateEffectButtons(preset);
+    if (!sceneOnly) {
+      updateEffectButtons(preset);
+    }
   }
 
   function setNotes(song) {
@@ -796,7 +817,7 @@
   }
 
   function toggleSolo() {
-    //console.log("Toggling SOLO, currentPreset=", currentPreset.pgm, "soloPreset=", currentSetlist ? currentSetlist.soloPreset : null, ", displayModeBeforeSolo=", displayModeBeforeSolo);
+    log("Toggling SOLO, currentPreset=", currentPreset.pgm, "solo-pgm=", presetsAndSetlists.getCurrentDevice().soloPresetPgm, ", displayModeBeforeSolo=", displayModeBeforeSolo);
     let isSoloSelected = displayModeBeforeSolo!==null;
     if(isSoloSelected) {
       // switch back to the mode that was selected when SOLO was pressed
@@ -825,7 +846,7 @@
       if(currentDisplayMode !== MODE_BANKS) { 
         changeDisplayMode(MODE_BANKS);
       }
-      switchToPreset(soloPreset || currentSetlist.soloPreset);
+      switchToPreset(soloPreset);
       els.soloToggle.classList.add('active');
       els.soloToggle.classList.remove('just-toggled');
       void els.soloToggle.offsetWidth; // reflow to restart animation
@@ -867,7 +888,7 @@
   }, { passive: false });
 
   els.setlist.addEventListener('click', (ev) => {
-    //console.log("Setlist clicked - currentDisplayMode=", currentDisplayMode);
+    log("Setlist clicked - currentDisplayMode=", currentDisplayMode);
 
     const row = ev.target.closest('.song');
     if (!row) return;
@@ -961,7 +982,7 @@
     const activeDevice = presetsAndSetlists && presetsAndSetlists.getCurrentDevice ? presetsAndSetlists.getCurrentDevice() : null;
     const tunerCc = activeDevice && activeDevice.tunerCc ? parseInt(activeDevice.tunerCc, 10) : 31;
 
-    console.log(`Tuner button clicked - activeDevice=${activeDevice ? activeDevice.name : 'none'}, tunerCc=${tunerCc}`);
+    log(`TUNER => activeDevice=${activeDevice ? activeDevice.name : 'none'}, tunerCc=${tunerCc}`);
 
     const on = els.tuner.getAttribute('aria-pressed') === 'true';
     if (on) {

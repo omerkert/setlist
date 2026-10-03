@@ -159,7 +159,7 @@ ${targetSetlist.songs.map(song => {
                 const pauseLine = song['no-pause'] ? '<span class="pause-flag">↔ no pause</span>' : '';
                 const keyLine = songKey ? `<span class="key-flag">${songKey}</span>` : '';
                 const capoLine = songCapo ? `<span class="capo-flag">${songCapo}</span>` : '';
-                const pgmLine = patchValue ? `<span class="song-pgm">${patchValue}</span>` : '';
+                const pgmLine = deviceId && patchValue ? `<span class="song-pgm">${patchValue}</span>` : '';
 
                 return `        <div class="song-row"><span class="song-title">${song.title}${keyLine}${pauseLine}${capoLine}</span>${pgmLine}</div>`;
             }).join('\n')}
