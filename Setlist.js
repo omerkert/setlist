@@ -415,7 +415,13 @@
   function getPresetForSong(song) {
     if (!song) return null;
     const device = presetsAndSetlists.getCurrentDevice();
-    return song.getPresetForDevice(presetsAndSetlists, device);
+    if (typeof song.getPresetForDevice === 'function') {
+      return song.getPresetForDevice(presetsAndSetlists, device);
+    }
+    if (!device || !device.id) return null;
+
+    const patch = song[device.id] !== undefined ? song[device.id] : song[device.id.toUpperCase()];
+    return patch ? presetsAndSetlists.findPresetByPgmInDevice(patch, device) : null;
   }
 
   function refreshActiveMidiOutputDevice(outputs) {
@@ -696,7 +702,7 @@
       const row = document.createElement('div');
       const classes = ['song', 'song-card-view'];
       const matchingSong = currentSetlist && currentSetlist.findSongByTitle(title);
-      if (currentSong && matchingSong && currentSong.title === matchingSong.title) {
+      if (currentSong && currentSong.title === title) {
         classes.push('active');
       }
       row.className = classes.join(' ');
@@ -721,9 +727,7 @@
         if (matchingSong) {
           switchToSong(matchingSong);
         } else {
-          currentSong = { title: song.title, notes: song.notes || '', prev: null, next: null };
-          setNotes(currentSong);
-          highlightSongForTitle(song.title);
+          switchToSong(song);
         }
       });
       els.setlist.appendChild(row);
