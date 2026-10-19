@@ -465,6 +465,10 @@
   }
 
   function switchToPreset(preset) {
+    if (!preset) {
+      log('switchToPreset called with null or invalid preset');
+      return;
+    }
     const sceneOnly = Boolean(preset && preset.calculatePatchIndex() === 0);
     if (!sceneOnly) {
       currentPreset = preset;
@@ -821,7 +825,8 @@
   }
 
   function toggleSolo() {
-    log("Toggling SOLO, currentPreset=", currentPreset.pgm, "solo-pgm=", presetsAndSetlists.getCurrentDevice().soloPresetPgm, ", displayModeBeforeSolo=", displayModeBeforeSolo);
+    const currentDevice = presetsAndSetlists ? presetsAndSetlists.getCurrentDevice() : null;
+    log("Toggling SOLO, currentPreset=", currentPreset ? currentPreset.pgm : 'none', "solo-pgm=", currentDevice ? currentDevice.soloPresetPgm : 'none', ", displayModeBeforeSolo=", displayModeBeforeSolo);
     let isSoloSelected = displayModeBeforeSolo!==null;
     if(isSoloSelected) {
       // switch back to the mode that was selected when SOLO was pressed
@@ -836,17 +841,33 @@
       displayModeBeforeSolo = null;
       presetBeforeSolo = null;
 
-      els.soloToggle.classList.remove('active', 'just-toggled');
+      els.soloToggle.classList.remove('active', 'just-toggled', 'error');
       els.soloToggle.setAttribute('aria-pressed', 'false');
 
     } else {
+      const soloPreset = currentSetlist ? currentSetlist.getSoloPresetForDevice(currentDevice, presetsAndSetlists) : null;
+      if (!soloPreset) {
+        const soloPgm = currentDevice && currentDevice.soloPresetPgm ? currentDevice.soloPresetPgm : '';
+        const devName = currentDevice ? currentDevice.name : 'Unknown';
+        const devId = currentDevice ? currentDevice.id : 'unknown';
+        console.warn(`[Setlist.js] Cannot toggle SOLO: solo-pgm "${soloPgm}" is not defined in presets for device "${devName}" (id=${devId})`);
+        log(`Cannot toggle SOLO: solo-pgm "${soloPgm}" is not defined for device "${devName}" (id=${devId})`);
+
+        els.soloToggle.classList.remove('active', 'just-toggled', 'error');
+        void els.soloToggle.offsetWidth; // reflow to restart animation
+        els.soloToggle.classList.add('error');
+        setTimeout(() => {
+          els.soloToggle.classList.remove('error');
+        }, 1200);
+        return;
+      }
+
       // switch to PRESET MODE and SOLO-BANK + SOLO-PRESET
       displayModeBeforeSolo = currentDisplayMode;
 
-      if(currentDisplayMode === MODE_BANKS || currentDisplayMode === MODE_CARDS) { 
+      if(currentDisplayMode === MODE_BANKS || currentDisplayMode === MODE_CARDS || currentDisplayMode === MODE_SONGS) { 
         presetBeforeSolo = currentPreset;
       }
-      const soloPreset = currentSetlist.getSoloPresetForDevice(presetsAndSetlists.getCurrentDevice(), presetsAndSetlists);
       if(currentDisplayMode !== MODE_BANKS) { 
         changeDisplayMode(MODE_BANKS);
       }

@@ -2,6 +2,9 @@ function formatModel(value) {
   const seen = new WeakSet();
   return `${value.constructor.name} ${JSON.stringify(value, (key, nestedValue) => {
     if (nestedValue && typeof nestedValue === 'object') {
+      if (key === 'prev' || key === 'next') {
+        return nestedValue.pgm || nestedValue.title || '[Linked]';
+      }
       if (seen.has(nestedValue)) {
         return '[Circular]';
       }
@@ -91,8 +94,12 @@ class Device {
     if (!this.soloPresetPgm || !presetsAndSetlist) {
       return null;
     }
-    return this.findPresetByPgm(this.soloPresetPgm)
+    const preset = this.findPresetByPgm(this.soloPresetPgm)
       || presetsAndSetlist.findPresetByPgmInDevice(this.soloPresetPgm, this);
+    if (!preset) {
+      console.warn(`[SetlistModels] Solo preset "${this.soloPresetPgm}" not defined in presets for device "${this.name}" (${this.id})`);
+    }
+    return preset;
   }
 
   getPresetsForBank(bank) {
@@ -689,6 +696,22 @@ class PresetsAndSetlists {
   validate() {
     const warnings = [];
 
+    // Check 1: Device solo-pgm references undefined preset
+    for (let i = 0; i < this.devices.length; i++) {
+      const device = this.devices[i];
+      if (device.soloPresetPgm && !device.findPresetByPgm(device.soloPresetPgm)) {
+        warnings.push({
+          type: 'UNDEFINED_SOLO_PRESET',
+          message: `Device "${device.name}" (${device.id}) defines solo-pgm "${device.soloPresetPgm}" which is not defined in its presets`,
+          details: {
+            deviceId: device.id,
+            deviceName: device.name,
+            soloPresetPgm: device.soloPresetPgm
+          }
+        });
+      }
+    }
+
     // Iterate through all setlists
     for (let i = 0; i < this.setlists.length; i++) {
       const setlist = this.setlists[i];
@@ -697,7 +720,7 @@ class PresetsAndSetlists {
       for (let j = 0; j < setlist.songs.length; j++) {
         const song = setlist.songs[j];
 
-        // Check 1: Song references undefined preset
+        // Check 2: Song references undefined preset
         const songPatch = song.pgm || (song.devicePgm ? Object.values(song.devicePgm).find(value => value) : null);
         if (songPatch && !this.findPresetByPgm(songPatch)) {
           warnings.push({
@@ -713,7 +736,7 @@ class PresetsAndSetlists {
           });
         }
 
-        // Check 2: Song not in band's master songs list
+        // Check 3: Song not in band's master songs list
         if (setlist.band && !setlist.band.findBandSong(song.title) && !song.isBreak()) {
           warnings.push({
             type: 'MISSING_BAND_SONG',
@@ -746,8 +769,16 @@ class PresetsAndSetlists {
 
     console.error(`❌ SETLIST VALIDATION ERRORS: ${warnings.length} issue(s) found`);
 
+    const undefinedSoloPresets = warnings.filter(w => w.type === 'UNDEFINED_SOLO_PRESET');
     const undefinedPresets = warnings.filter(w => w.type === 'UNDEFINED_PRESET');
     const missingBandSongs = warnings.filter(w => w.type === 'MISSING_BAND_SONG');
+
+    if (undefinedSoloPresets.length > 0) {
+      console.error(`\n📍 ${undefinedSoloPresets.length} Undefined Solo Preset(s):`);
+      undefinedSoloPresets.forEach((warning, index) => {
+        console.error(`  [${index + 1}] Device "${warning.details.deviceName}" (${warning.details.deviceId}) references solo-pgm "${warning.details.soloPresetPgm}" which is not defined in its presets`);
+      });
+    }
 
     if (undefinedPresets.length > 0) {
       console.error(`\n📍 ${undefinedPresets.length} Undefined Preset(s):`);

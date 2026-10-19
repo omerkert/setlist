@@ -30,4 +30,20 @@ const soloPresetForGp = setlist.getSoloPresetForDevice(model.findDeviceById('gp'
 assert.strictEqual(soloPresetForGp.label, 'GP preset');
 assert.strictEqual(soloPresetForGp.pgm, '2-4');
 
+// Test undefined solo-pgm validation warning
+const invalidSoloModel = new Setlists({
+  devices: [
+    { name: 'Valeton GP-150', id: 'gp', 'solo-pgm': '70', presets: [{ pgm: '63', label: 'A2 SOLO' }] }
+  ],
+  bands: []
+});
+const warnings = invalidSoloModel.validate();
+const soloWarning = warnings.find(w => w.type === 'UNDEFINED_SOLO_PRESET');
+assert.ok(soloWarning, 'Expected UNDEFINED_SOLO_PRESET warning');
+assert.strictEqual(soloWarning.details.deviceId, 'gp');
+assert.strictEqual(soloWarning.details.soloPresetPgm, '70');
+
+const gpInvalid = invalidSoloModel.findDeviceById('gp');
+assert.strictEqual(gpInvalid.getSoloPreset(invalidSoloModel), null);
+
 console.log('active-midi-device test passed');

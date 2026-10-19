@@ -140,6 +140,19 @@ button.directBtn:focus {
   animation: solo-toggle-on 0.25s ease-out forwards;
 }
 
+/* Error flash and shake when solo preset is not defined */
+@keyframes solo-toggle-error {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+#soloToggle.error {
+  border-color: #ef5350 !important;
+  background: linear-gradient(180deg, #8b1e1e, #4a0d0d) !important;
+  box-shadow: 0 0 14px rgba(239, 83, 80, 0.75) !important;
+  animation: solo-toggle-error 0.35s ease-in-out;
+}
+
 #soloToggle:active {
   border: #ff7f5f 4px solid;
   /* transform: translateY(1px); */
