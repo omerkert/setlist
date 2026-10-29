@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kemper Tuner</title>
+<style>
+  :root{
+    --bg:#f6f6f4; --card:#ffffff; --fg:#1c1c1a; --mute:#76766f; --line:#dcdcd6;
+    --ok:#1f9d55; --warn:#d97706; --accent:#2563eb; --err:#dc2626;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121212; --card:#1b1b1a; --fg:#ecece8; --mute:#8d8d86; --line:#2e2e2b;
+      --ok:#34d399; --warn:#fbbf24; --accent:#60a5fa; --err:#f87171;
+      color-scheme: dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       display:flex;justify-content:center;padding:20px}
+  .wrap{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  h1{font-size:18px;margin:0;font-weight:600}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .pill{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+  .pill.on{color:var(--ok);border-color:var(--ok)}
+  .pill.err{color:var(--err);border-color:var(--err)}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+  label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mute);flex:1 1 140px}
+  label.chk{flex-direction:row;align-items:center;gap:6px;flex:0 0 auto;color:var(--fg);font-size:13px}
+  select,button,input[type=number],input[type=text]{font:inherit;color:var(--fg);background:var(--bg);
+       border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  button{cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button:disabled{opacity:.45;cursor:default}
+  .tuner{text-align:center;padding:10px 16px 18px}
+  .note{font-size:112px;line-height:1;font-weight:700;letter-spacing:-2px;
+        font-variant-numeric:tabular-nums;transition:color .15s,opacity .2s;min-height:112px}
+  .cents{font-size:20px;color:var(--mute);font-variant-numeric:tabular-nums;min-height:28px}
+  .hint{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);padding:0 24px}
+  .stale .note,.stale .cents{opacity:.3}
+  .toggle{margin-top:14px;min-width:150px;font-size:16px;padding:10px 20px}
+  svg{width:100%;height:auto;display:block}
+  .tick{stroke:var(--mute);stroke-width:2}
+  .tick.minor{stroke-width:1;opacity:.6}
+  .zone{fill:none;stroke:var(--ok);stroke-width:10;opacity:.25}
+  #needle{transform-origin:150px 150px}
+  .needle-line{stroke:var(--fg);stroke-width:3;stroke-linecap:round}
+  .needle-hub{fill:var(--fg)}
+  .lbl{fill:var(--mute);font-size:11px;text-anchor:middle}
+  details summary{cursor:pointer;font-weight:600}
+  details .row{margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <h1>Kemper Tuner</h1>
+    <span id="status" class="pill">not connected</span>
+  </div>
+
+  <div class="card tuner stale" id="tunerCard">
+    <div class="note" id="noteName">–</div>
+    <div class="cents" id="centsTxt">tuner off</div>
+    <svg viewBox="0 0 300 175" aria-label="Tuner gauge">
+      <g id="ticks"></g>
+      <g id="needle">
+        <line class="needle-line" x1="150" y1="150" x2="150" y2="38"/>
+        <circle class="needle-hub" cx="150" cy="150" r="7"/>
+      </g>
+    </svg>
+    <div class="hint"><span>♭ flat</span><span>sharp ♯</span></div>
+    <button id="tunerToggle" class="toggle" disabled aria-pressed="false">Tuner: OFF</button>
+  </div>
+
+  <details class="card">
+    <summary>Settings</summary>
+    <div class="row">
+      <button id="connect">Reconnect MIDI</button>
+      <label>MIDI in <select id="inSel"><option value="">—</option></select></label>
+      <label>MIDI out <select id="outSel"><option value="">—</option></select></label>
+    </div>
+    <div class="row">
+      <label style="flex:0 0 90px">Channel <select id="chan"></select></label>
+      <label style="flex:0 0 130px">SysEx product byte
+        <select id="prod"><option value="2">0x02 (default)</option><option value="0">0x00</option></select>
+      </label>
+      <label style="flex:0 0 110px">Needle source
+        <select id="devSrc"><option value="51">7C:51</option><option value="0f">7C:0F</option></select>
+      </label>
+    </div>
+    <div class="row">
+      <label style="flex:0 0 120px">Centre (raw) <input id="center" type="number" min="0" max="16383" value="8192"></label>
+      <label style="flex:0 0 130px">Full scale (±cents) <input id="range" type="number" min="10" max="100" value="50"></label>
+      <label style="flex:0 0 110px">Beacon flags (hex) <input id="beaconFlags" type="text" value="03" maxlength="2"></label>
+      <label class="chk"><input type="checkbox" id="demo"> Demo</label>
+    </div>
+  </details>
+
+</div>
+
+<script>
+/* Kemper Profiler tuner over Web MIDI.
+ * - A "beacon" SysEx (renewed every 5 s) makes the Player push tuner data.
+ * - Note: 7D:54, deviation: 7C:51 / 7C:0F, tuner mode: 7F:7E (1 = open).
+ * - Tuner on/off: CC 31. */
+const MANU = [0x00, 0x20, 0x33];
+const ADDR = { mode: [0x7F, 0x7E], note: [0x7D, 0x54], dev0f: [0x7C, 0x0F], dev51: [0x7C, 0x51] };
+const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const IN_TUNE_CENTS = 3;
+
+const $ = id => document.getElementById(id);
+let midi = null, input = null, output = null, demoTimer = null;
+let tunerOn = false, lastToggle = 0;
+const devHist = [];
+const st = { rawNote: null, cents: 0, shown: 0, tNote: 0, tDev: 0 };
+
+/* ---------- settings (remembered in the browser) ---------- */
+for (let i = 1; i <= 16; i++) $('chan').add(new Option(i, i));
+const SETTINGS = ['chan', 'prod', 'devSrc', 'center', 'range', 'beaconFlags'];
+try {
+  const s = JSON.parse(localStorage.getItem('kemperTuner') || '{}');
+  SETTINGS.forEach(id => { if (s[id] !== undefined) $(id).value = s[id]; });
+} catch (e) {}
+function saveSettings(){
+  try {
+    const s = {}; SETTINGS.forEach(id => s[id] = $(id).value);
+    localStorage.setItem('kemperTuner', JSON.stringify(s));
+  } catch (e) {}
+}
+
+function setStatus(text, cls){ const s = $('status'); s.textContent = text; s.className = 'pill ' + (cls || ''); }
+
+/* ---------- gauge ---------- */
+(function drawTicks(){
+  const cx = 150, cy = 150, r1 = 120, sweep = 60;
+  const pt = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; };
+  const zA = IN_TUNE_CENTS / 50 * sweep;
+  const [x1, y1] = pt(-zA, r1 - 6), [x2, y2] = pt(zA, r1 - 6);
+  let svg = `<path class="zone" d="M${x1} ${y1} A${r1-6} ${r1-6} 0 0 1 ${x2} ${y2}"/>`;
+  for (let c = -50; c <= 50; c += 5){
+    const deg = c / 50 * sweep, major = c % 10 === 0;
+    const [ax, ay] = pt(deg, r1), [bx, by] = pt(deg, r1 - (major ? 16 : 9));
+    svg += `<line class="tick ${major ? '' : 'minor'}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}"/>`;
+    if (c % 25 === 0){
+      const [tx, ty] = pt(deg, r1 + 12);
+      svg += `<text class="lbl" x="${tx}" y="${ty + 4}">${c > 0 ? '+' + c : c}</text>`;
+    }
+  }
+  $('ticks').innerHTML = svg;
+})();
+
+/* ---------- MIDI output ---------- */
+function sysexRequest(addr){
+  if (!output) return;
+  output.send([0xF0, ...MANU, parseInt($('prod').value, 10), 0x7F, 0x41, 0x00, addr[0], addr[1], 0xF7]);
+}
+function sendCC(cc, val){
+  if (!output) return;
+  output.send([0xB0 | (parseInt($('chan').value, 10) - 1), cc, val]);
+}
+function sendBeacon(){
+  if (!output) return;
+  const flags = (parseInt($('beaconFlags').value, 16) || 0) & 0x7F;
+  output.send([0xF0, ...MANU, parseInt($('prod').value, 10), 0x7F, 0x7E, 0x00, 0x40, 0x02, flags, 0x05, 0xF7]);
+}
+
+/* ---------- ports ---------- */
+function fillPorts(){
+  const keep = { i: $('inSel').value, o: $('outSel').value };
+  const fill = (sel, ports, prev) => {
+    sel.innerHTML = '<option value="">—</option>';
+    ports.forEach(p => sel.add(new Option(p.name, p.id)));
+    const pick = ports.find(p => /profiler/i.test(p.name)) || ports.find(p => /kemper/i.test(p.name));
+    if (prev && ports.some(p => p.id === prev)) sel.value = prev;
+    else if (pick) sel.value = pick.id;
+  };
+  fill($('inSel'),  [...midi.inputs.values()],  keep.i);
+  fill($('outSel'), [...midi.outputs.values()], keep.o);
+  bindPorts();
+}
+function bindPorts(){
+  if (input) input.onmidimessage = null;
+  input  = midi.inputs.get($('inSel').value)   || null;
+  output = midi.outputs.get($('outSel').value) || null;
+  if (input) input.onmidimessage = onMidi;
+  const ok = !!(input && output);
+  $('tunerToggle').disabled = !output;
+  setStatus(ok ? 'connected' : 'select ports', ok ? 'on' : '');
+  if (ok) sendBeacon();
+}
+async function connect(){
+  if (!navigator.requestMIDIAccess){ setStatus('Web MIDI unsupported', 'err'); return; }
+  try { midi = await navigator.requestMIDIAccess({ sysex: true }); }
+  catch (e){ setStatus('MIDI access denied', 'err'); return; }
+  midi.onstatechange = fillPorts;
+  fillPorts();
+}
+
+/* ---------- MIDI input ---------- */
+function onMidi(e){
+  const d = e.data, n = d.length;
+  if (d[0] !== 0xF0 || d[1] !== MANU[0] || d[2] !== MANU[1] || d[3] !== MANU[2]) return;
+  // single parameter change: ... 01 00 page num MSB LSB F7
+  if (n >= 13 && d[n - 7] === 0x01 && d[n - 1] === 0xF7)
+    handleParam(d[n - 5], d[n - 4], (d[n - 3] << 7) | d[n - 2]);
+}
+
+function handleParam(page, num, val){
+  const is = a => a[0] === page && a[1] === num;
+  const now = performance.now();
+  if (is(ADDR.note)){
+    st.rawNote = val; st.tNote = now;
+  } else if (is(ADDR.dev0f) || is(ADDR.dev51)){
+    if ((is(ADDR.dev0f) ? '0f' : '51') !== $('devSrc').value) return;
+    if (val === 0){ st.tDev = 0; devHist.length = 0; return; }   // 0 = no signal
+    st.tDev = now;
+    devHist.push(val);
+    if (devHist.length > 5) devHist.shift();
+    const med = [...devHist].sort((a, b) => a - b)[devHist.length >> 1];
+    const range  = parseFloat($('range').value) || 50;
+    const center = parseFloat($('center').value);
+    st.cents = (med - (isNaN(center) ? 8192 : center)) / 8192 * range;
+  } else if (is(ADDR.mode)){
+    // ignore read-backs right after our own toggle
+    if (now - lastToggle > 1200 && (val === 1) !== tunerOn) setTunerState(val === 1);
+  }
+}
+
+/* ---------- tuner state ---------- */
+function setTunerState(on){
+  tunerOn = on;
+  const b = $('tunerToggle');
+  b.textContent = on ? 'Tuner: ON' : 'Tuner: OFF';
+  b.classList.toggle('primary', on);
+  b.setAttribute('aria-pressed', String(on));
+  if (!on){ st.rawNote = null; devHist.length = 0; st.tDev = 0; }
+}
+$('tunerToggle').onclick = () => {
+  const next = !tunerOn;
+  lastToggle = performance.now();
+  sendBeacon();
+  sendCC(31, next ? 1 : 0);
+  setTunerState(next);
+};
+
+/* ---------- timers ---------- */
+setInterval(sendBeacon, 5000);                                              // keep push mode alive
+setInterval(() => { if (output) sysexRequest(ADDR.mode); }, 1000);           // follow the Player's tuner
+setInterval(() => { if (output && tunerOn) sysexRequest(ADDR.note); }, 150); // note while tuner is open
+
+/* ---------- demo ---------- */
+function startDemo(){
+  setTunerState(true);
+  const t0 = performance.now();
+  demoTimer = setInterval(() => {
+    const t = (performance.now() - t0) / 1000;
+    const c = 40 * Math.sin(t * 0.5) * Math.exp(-((t % 12.57) / 9));
+    const center = parseFloat($('center').value) || 8192;
+    const range = parseFloat($('range').value) || 50;
+    handleParam(ADDR.note[0], ADDR.note[1], [40, 45, 50, 55, 59, 64][Math.floor(t / 12.57) % 6]);
+    handleParam(ADDR.dev51[0], ADDR.dev51[1], Math.round(center + c / range * 8192));
+  }, 60);
+}
+function stopDemo(){ clearInterval(demoTimer); demoTimer = null; setTunerState(false); }
+
+/* ---------- render ---------- */
+function frame(){
+  const now = performance.now();
+  const noteOk = tunerOn && st.rawNote !== null && now - st.tNote < 2500;
+  const devOk  = tunerOn && now - st.tDev < 700;
+  $('tunerCard').classList.toggle('stale', !devOk);
+
+  st.shown += ((devOk ? st.cents : 0) - st.shown) * 0.25;
+  const half = parseFloat($('range').value) || 50;
+  const clamped = Math.max(-half, Math.min(half, st.shown));
+  $('needle').style.transform = `rotate(${clamped / half * 60}deg)`;
+
+  const noteEl = $('noteName'), centsEl = $('centsTxt');
+  if (!tunerOn){
+    noteEl.textContent = '–'; centsEl.textContent = 'tuner off'; noteEl.style.color = '';
+  } else if (noteOk){
+    noteEl.textContent = NOTE_NAMES[st.rawNote % 12];
+    if (devOk){
+      const c = st.cents, abs = Math.abs(c);
+      centsEl.textContent = (c > 0 ? '+' : '') + c.toFixed(1) + ' cents';
+      noteEl.style.color = abs <= IN_TUNE_CENTS ? 'var(--ok)' : abs <= 12 ? 'var(--warn)' : 'var(--fg)';
+    } else { centsEl.textContent = 'no signal'; noteEl.style.color = ''; }
+  } else {
+    noteEl.textContent = '–'; centsEl.textContent = 'no signal'; noteEl.style.color = '';
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- wiring ---------- */
+$('connect').onclick = connect;
+$('inSel').onchange = $('outSel').onchange = () => midi && bindPorts();
+SETTINGS.forEach(id => $(id).addEventListener('change', saveSettings));
+$('beaconFlags').addEventListener('change', sendBeacon);
+$('prod').addEventListener('change', sendBeacon);
+$('devSrc').addEventListener('change', () => { devHist.length = 0; st.tDev = 0; });
+$('demo').onchange = e => e.target.checked ? startDemo() : stopDemo();
+
+connect();   // auto-connect; ports named "Profiler" are selected automatically
+</script>
+</body>
+</html>
