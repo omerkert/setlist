@@ -24,7 +24,17 @@ class Device {
     this.id = data.id || '';
     this.description = data.description || '';
     this.tunerCc = data['tuner-cc'] !== undefined ? String(data['tuner-cc']) : '';
-    this.soloPresetPgm = data['solo-pgm'] !== undefined ? String(data['solo-pgm']) : '';
+    const rawSoloPgm = data['solo-pgm'] !== undefined ? data['solo-pgm'] : data.soloPgm;
+    if (Array.isArray(rawSoloPgm)) {
+      this.soloPresetPgms = rawSoloPgm
+        .map((item) => (item !== undefined && item !== null ? String(item).trim() : ''))
+        .filter(Boolean);
+    } else if (rawSoloPgm !== undefined && rawSoloPgm !== null && String(rawSoloPgm).trim() !== '') {
+      this.soloPresetPgms = [String(rawSoloPgm).trim()];
+    } else {
+      this.soloPresetPgms = [];
+    }
+    this.soloPresetPgm = this.soloPresetPgms.length > 0 ? this.soloPresetPgms[0] : '';
     const sceneCcValue = Number(data['scene-cc']);
     this.sceneCc = Number.isInteger(sceneCcValue) && sceneCcValue >= 0 && sceneCcValue <= 127
       ? sceneCcValue
@@ -90,14 +100,49 @@ class Device {
     });
   }
 
-  getSoloPreset(presetsAndSetlist) {
-    if (!this.soloPresetPgm || !presetsAndSetlist) {
+  getSoloPgm(songOrSolo = null) {
+    let list = Array.isArray(this.soloPresetPgms) ? this.soloPresetPgms : [];
+    if (list.length === 0 && this.soloPresetPgm) {
+      list = [this.soloPresetPgm];
+    }
+    if (list.length === 0) {
+      return '';
+    }
+
+    // If the array has multiple entries and a "song" in a "setlist" has a "solo" attribute:
+    // use the number in this attribute as array index (1-based index)
+    if (list.length > 1 && songOrSolo !== null && songOrSolo !== undefined) {
+      let soloValue = null;
+      if (typeof songOrSolo === 'object') {
+        soloValue = songOrSolo.solo;
+      } else if (typeof songOrSolo === 'number' || typeof songOrSolo === 'string') {
+        soloValue = songOrSolo;
+      }
+
+      if (soloValue !== null && soloValue !== undefined && String(soloValue).trim() !== '') {
+        const parsedIndex = parseInt(soloValue, 10);
+        if (Number.isInteger(parsedIndex) && parsedIndex >= 1 && parsedIndex <= list.length) {
+          return list[parsedIndex - 1];
+        }
+      }
+    }
+
+    // Default is using the first entry of the array for all other cases
+    return list[0];
+  }
+
+  getSoloPreset(presetsAndSetlist, songOrSolo = null) {
+    if (!presetsAndSetlist) {
       return null;
     }
-    const preset = this.findPresetByPgm(this.soloPresetPgm)
-      || presetsAndSetlist.findPresetByPgmInDevice(this.soloPresetPgm, this);
+    const soloPgm = this.getSoloPgm(songOrSolo);
+    if (!soloPgm) {
+      return null;
+    }
+    const preset = this.findPresetByPgm(soloPgm)
+      || presetsAndSetlist.findPresetByPgmInDevice(soloPgm, this);
     if (!preset) {
-      console.warn(`[SetlistModels] Solo preset "${this.soloPresetPgm}" not defined in presets for device "${this.name}" (${this.id})`);
+      console.warn(`[SetlistModels] Solo preset "${soloPgm}" not defined in presets for device "${this.name}" (${this.id})`);
     }
     return preset;
   }
@@ -230,6 +275,7 @@ class Band {
       key: song.key || '',
       capo: song.capo || '',
       notes: song.notes || '',
+      solo: song.solo !== undefined ? song.solo : null,
       noPause: song.noPause !== undefined ? song.noPause : (song['no-pause'] || 0),
       'no-pause': song['no-pause'] !== undefined ? song['no-pause'] : (song.noPause || 0)
     }));
@@ -297,6 +343,9 @@ class Song {
         : (firstDevicePgm || ''));
 
     this.notes = data.notes !== undefined ? data.notes : (bandDefaults.notes || '');
+    const rawSolo = mergedSong.solo;
+    const parsedSolo = parseInt(rawSolo, 10);
+    this.solo = Number.isInteger(parsedSolo) ? parsedSolo : null;
     this.break = data.break !== undefined ? data.break : (bandDefaults.break || 0);
     if (this.title && this.title.trim().toLowerCase() === 'break') {
       this.break = 1;
@@ -356,6 +405,29 @@ class Song {
     return this.capo && String(this.capo).trim().length > 0;
   }
 
+  hasSolo() {
+    return Number.isInteger(this.solo);
+  }
+
+  getSoloPreset(presetsAndSetlist, deviceIdentifier = null) {
+    if (!presetsAndSetlist) {
+      return null;
+    }
+    let device = deviceIdentifier;
+    if (typeof deviceIdentifier === 'string') {
+      device = presetsAndSetlist.findDeviceById(deviceIdentifier) || presetsAndSetlist.findDeviceByName(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'number') {
+      device = presetsAndSetlist.getDevice(deviceIdentifier);
+    } else if (!deviceIdentifier) {
+      device = presetsAndSetlist.getCurrentDevice();
+    }
+    return device && device.getSoloPreset ? device.getSoloPreset(presetsAndSetlist, this) : null;
+  }
+
+  getSoloPgmForDevice(device) {
+    return device && device.getSoloPgm ? device.getSoloPgm(this) : '';
+  }
+
   toString() {
     return formatModel(this);
   }
@@ -378,8 +450,38 @@ class Setlist {
     });
   }
 
-  getSoloPresetForDevice(device, presetsAndSetlist) {
-    return device && device.getSoloPreset ? device.getSoloPreset(presetsAndSetlist) : null;
+  getSoloPresetForDevice(device, presetsAndSetlist, song = null) {
+    let resolvedDevice = device;
+    if (presetsAndSetlist && (typeof device === 'string' || typeof device === 'number')) {
+      resolvedDevice = typeof device === 'number'
+        ? presetsAndSetlist.getDevice(device)
+        : (presetsAndSetlist.findDeviceById(device) || presetsAndSetlist.findDeviceByName(device));
+    }
+    let resolvedSong = song;
+    if (typeof song === 'number' && this.songs && song >= 0 && song < this.songs.length) {
+      resolvedSong = this.songs[song];
+    }
+    return resolvedDevice && resolvedDevice.getSoloPreset
+      ? resolvedDevice.getSoloPreset(presetsAndSetlist, resolvedSong)
+      : null;
+  }
+
+  getSoloPgmForDevice(device, presetsAndSetlist = null, song = null) {
+    let resolvedDevice = device;
+    if (presetsAndSetlist && (typeof device === 'string' || typeof device === 'number')) {
+      resolvedDevice = typeof device === 'number'
+        ? presetsAndSetlist.getDevice(device)
+        : (presetsAndSetlist.findDeviceById(device) || presetsAndSetlist.findDeviceByName(device));
+    } else if (!resolvedDevice && presetsAndSetlist) {
+      resolvedDevice = presetsAndSetlist.getCurrentDevice();
+    }
+    let resolvedSong = song;
+    if (typeof song === 'number' && this.songs && song >= 0 && song < this.songs.length) {
+      resolvedSong = this.songs[song];
+    }
+    return resolvedDevice && typeof resolvedDevice.getSoloPgm === 'function'
+      ? resolvedDevice.getSoloPgm(resolvedSong)
+      : (resolvedDevice && resolvedDevice.soloPresetPgm ? resolvedDevice.soloPresetPgm : '');
   }
 
   getSongCount() {
@@ -690,6 +792,41 @@ class PresetsAndSetlists {
   }
 
   /**
+   * Get solo preset for a specific device, optionally for a specific song
+   * @param {string|number|object} deviceIdentifier - Device name, id, index, or device object
+   * @param {Song|object|number} [song=null] - Song object, song with solo attribute, or 1-based solo index
+   */
+  getSoloPresetForDevice(deviceIdentifier, song = null) {
+    let device;
+    if (typeof deviceIdentifier === 'number') {
+      device = this.getDevice(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'string') {
+      device = this.findDeviceByName(deviceIdentifier) || this.findDeviceById(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'object' && deviceIdentifier !== null) {
+      device = deviceIdentifier;
+    } else {
+      device = this.getCurrentDevice();
+    }
+    return device && device.getSoloPreset ? device.getSoloPreset(this, song) : null;
+  }
+
+  getSoloPgmForDevice(deviceIdentifier = null, song = null) {
+    let device;
+    if (typeof deviceIdentifier === 'number') {
+      device = this.getDevice(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'string') {
+      device = this.findDeviceByName(deviceIdentifier) || this.findDeviceById(deviceIdentifier);
+    } else if (typeof deviceIdentifier === 'object' && deviceIdentifier !== null) {
+      device = deviceIdentifier;
+    } else {
+      device = this.getCurrentDevice();
+    }
+    return device && typeof device.getSoloPgm === 'function'
+      ? device.getSoloPgm(song)
+      : (device && device.soloPresetPgm ? device.soloPresetPgm : '');
+  }
+
+  /**
    * Validate the setlist data for common issues
    * @returns {Array} Array of validation warning objects with {type, message, details}
    */
@@ -699,16 +836,22 @@ class PresetsAndSetlists {
     // Check 1: Device solo-pgm references undefined preset
     for (let i = 0; i < this.devices.length; i++) {
       const device = this.devices[i];
-      if (device.soloPresetPgm && !device.findPresetByPgm(device.soloPresetPgm)) {
-        warnings.push({
-          type: 'UNDEFINED_SOLO_PRESET',
-          message: `Device "${device.name}" (${device.id}) defines solo-pgm "${device.soloPresetPgm}" which is not defined in its presets`,
-          details: {
-            deviceId: device.id,
-            deviceName: device.name,
-            soloPresetPgm: device.soloPresetPgm
-          }
-        });
+      const soloPgms = Array.isArray(device.soloPresetPgms) && device.soloPresetPgms.length > 0
+        ? device.soloPresetPgms
+        : (device.soloPresetPgm ? [device.soloPresetPgm] : []);
+
+      for (const soloPgm of soloPgms) {
+        if (soloPgm && !device.findPresetByPgm(soloPgm)) {
+          warnings.push({
+            type: 'UNDEFINED_SOLO_PRESET',
+            message: `Device "${device.name}" (${device.id}) defines solo-pgm "${soloPgm}" which is not defined in its presets`,
+            details: {
+              deviceId: device.id,
+              deviceName: device.name,
+              soloPresetPgm: soloPgm
+            }
+          });
+        }
       }
     }
 

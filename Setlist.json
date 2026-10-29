@@ -6,7 +6,7 @@
       "description": "...",
       "midi-out-id" : [ "profiler" ],
       "tuner-cc" : 31,
-      "solo-pgm" : "1-3",
+      "solo-pgm" : [ "1-3", "5-1", "5-2" ],
 
       "effects" : [
         [ 75, 76, 77, 78 ],
@@ -28,7 +28,7 @@
             [ { "CMP": 0 }, { "TRM": 0 }, { "": 0 }, { "": 0 }, { "BST": 0 }, { "PHA": 0 }, { "DLY": 0 }, { "REV": 1 } ]
           ]
         },
-        { "pgm": "1-3", "label": "AC20 SOLO" ,
+        { "pgm": "1-3", "label": "AC20 SOLO +5" ,
           "effects": [
             [ { "PRE-BST": 0 }, { "PST-BST": 0 }, { "PST-BST": 0 }, { "DLY": 0 } ],
             [ { "CMP": 1 }, { "DIS": 0 }, { "": 0 }, { "": 0 }, { "BST": 0 }, { "BST": 0 }, { "DLY": 0 }, { "REV": 1 } ]
@@ -61,20 +61,20 @@
         { "pgm": "3-1", "label": "The Door" },
         { "pgm": "3-2", "label": "APT" },
         { "pgm": "3-3", "label": "Get Lucky" },
-        { "pgm": "3-4", "label": "Nothing Compares 2U" },
-        { "pgm": "3-5", "label": "Stand by me" },
+        { "pgm": "3-4", "label": "How will I know" },
+        { "pgm": "3-5", "label": "I love your Smile" },
 
-        { "pgm": "4-1", "label": "" },
-        { "pgm": "4-2", "label": "" },
-        { "pgm": "4-3", "label": "" },
-        { "pgm": "4-4", "label": "" },
-        { "pgm": "4-5", "label": "" },
+        { "pgm": "4-1", "label": "CLN CMP REV+" },
+        { "pgm": "4-2", "label": "AC20 CLN CMP REV" },
+        { "pgm": "4-3", "label": "Nothing Compares 2U" },
+        { "pgm": "4-4", "label": "Stand by me" },
+        { "pgm": "4-5", "label": "ACC Fingerpick" },
 
-        { "pgm": "5-1", "label": "" },
-        { "pgm": "5-2", "label": "" },
+        { "pgm": "5-1", "label": "AC20 SOLO +3" },
+        { "pgm": "5-2", "label": "AC20 SOLO CLN" },
         { "pgm": "5-3", "label": "" },
         { "pgm": "5-4", "label": "" },
-        { "pgm": "5-5", "label": "" },
+        { "pgm": "5-5", "label": "A Million Times" },
 
         { "pgm": "9-1", "label": "Morg RCA35 Cleaner" },
         { "pgm": "9-2", "label": "Morg RCA35 Clean" },
@@ -119,7 +119,7 @@
       "description": "Two notes GENOME V2 Windows Application",
       "midi-out-id" : [ "GENOME" ],
       "tuner-cc" : 31,
-      "solo-pgm" : "1-3",
+      "solo-pgm" : [ "1-3" ],
 
       "effects" : [
         [ 75, 76, 77, 78 ]
@@ -169,7 +169,7 @@
       "description": "TODO: effects are currently only switched OFF but not toggled",
       "midi-out-id" : [ "GP-150 MIDI" ],
       "tuner-cc" : "60",
-      "solo-pgm" : "63",
+      "solo-pgm" : [ "60", "61", "62" ],
       "effects" : [
         [ 49, 51, 55, 56, 57 ]
       ],
@@ -243,17 +243,17 @@
         { "pgm": "52", "label": "ODR J8 BPU" },
         { "pgm": "53", "label": "SOLO J8" },
         { "pgm": "54", "label": "Don't know why" },
-        { "pgm": "55", "label": "Don't start now" },
+        { "pgm": "55", "label": "..." },
 
-        { "pgm": "56", "label": "Get LUCKY" },
-        { "pgm": "57", "label": "The Door" },
-        { "pgm": "58", "label": "Human Nature" },
-        { "pgm": "60", "label": "A2 CLN (MORE" },
-        { "pgm": "60", "label": "A2 CLN" },
+        { "pgm": "56", "label": "A2 FUNK" },
+        { "pgm": "57", "label": "A2 CLN" },
+        { "pgm": "58", "label": "A2 UCL" },
+        { "pgm": "59", "label": "A2 DRV" },
+        { "pgm": "60", "label": "A2 SOLO +5" },
 
-        { "pgm": "61", "label": "A2 UCL" },
-        { "pgm": "62", "label": "A2 DRV" },
-        { "pgm": "63", "label": "A2 SOLO" },
+        { "pgm": "61", "label": "A2 SOLO +3" },
+        { "pgm": "62", "label": "A2 SOLO CLN" },
+        { "pgm": "63", "label": "..." },
         { "pgm": "64", "label": "Don't know why" },
         { "pgm": "65", "label": "Don't start now" },
 
@@ -268,7 +268,7 @@
       "description": "TODO: add CTRL-2 + CTRL-3 via 2nd bank of MVave 1+2 or 1st bank (26-PREV, 27-NEXT, 48-FX1, 49-FX2, 50-AMP, 51-NR, 52-CAB, 53-EQ, 54-FX3, 55-DLY, 56-REV, 57 or 60-TUNER)",
       "midi-out-id" : [ "Ampero Mini Subdevice" ],
       "tuner-cc" : "60",
-      "solo-pgm" : "1-3",
+      "solo-pgm" : [ "1-3" ],
       "effects" : [
         [ 48, 49, 53, 54, 55, 56 ]
       ],
@@ -290,7 +290,7 @@
       "midi-out-id" : [ "MIDIOUT2" ],
       "tuner-cc" : "99",
       "scene-cc" : "34",
-      "solo-pgm" : "3",
+      "solo-pgm" : [ "3" ],
       "presets" : [
         { "pgm": "0", "label": "AC20 CLN" },
         { "pgm": "1", "label": "AC20 CLN CMP" },
@@ -308,38 +308,38 @@
     {
       "name": "UJ",
       "songs": [
-        { "title": "About Damn Time",     "kp": "1-1", "gp": "60", "am": "1-1" },   
-        { "title": "APT",                 "kp": "1-5", "gp": "63", "am": "2-1" },
-        { "title": "Crazy",               "kp": "1-1", "gp": "60" },
-        { "title": "Deja Vu",             "kp": "1-1", "gp": "60", "fm": "5" },
+        { "title": "About Damn Time",     "kp": "1-1", "gp": "56", "am": "1-1" },   
+        { "title": "APT",                 "kp": "1-5", "gp": "59", "am": "2-1" },
+        { "title": "Crazy",               "kp": "1-1", "gp": "56" },
+        { "title": "Deja Vu",             "kp": "1-1", "gp": "56", "fm": "5" },
         { "title": "Don't know why",      "kp": "2-5", "gp": "64", "capo": "III" },
         { "title": "Don't Start Now",     "kp": "2-3", "gp": "65" },
-        { "title": "Falling for you",     "kp": "2-2", "gp": "60" },
-        { "title": "Flowers",             "kp": "1-1", "gp": "60" },
-        { "title": "Freedom! 90",         "kp": "1-2", "gp": "60" },
+        { "title": "Falling for you",     "kp": "2-2", "gp": "56" },
+        { "title": "Flowers",             "kp": "1-1", "gp": "56" },
+        { "title": "Freedom! 90",         "kp": "1-2", "gp": "57", "key": "C" },
         { "title": "Get Lucky",           "kp": "3-3", "gp": "66" },
-        { "title": "Hard To Handle",      "kp": "1-4", "gp": "61" },
-        { "title": "How will I know",     "kp": "1-4", "gp": "61" },
-        { "title": "I'm Outta Love",      "kp": "1-1", "gp": "60" },
-        { "title": "I feel it coming",    "kp": "1-1", "gp": "60" },
-        { "title": "I love your smile",   "kp": "1-1", "gp": "60" },
-        { "title": "I want you back",     "kp": "1-1", "gp": "60" },
-        { "title": "Kiss",                "kp": "1-4", "gp": "61" },
-        { "title": "Let me love you",     "kp": "2-1", "gp": "60" },
-        { "title": "Lost in Music",       "kp": "1-1", "gp": "60" },
-        { "title": "Love Foolosophy",     "kp": "1-1", "gp": "60", "am": "1-1", "fm": "0.0" },
-        { "title": "Man in the mirror",   "kp": "1-2", "gp": "60" },
+        { "title": "Hard To Handle",      "kp": "1-4", "gp": "58" },
+        { "title": "How will I know",     "kp": "1-4", "gp": "58" },
+        { "title": "I'm Outta Love",      "kp": "1-1", "gp": "57" },
+        { "title": "I feel it coming",    "kp": "1-1", "gp": "56" },
+        { "title": "I love your smile",   "kp": "1-1", "gp": "56" },
+        { "title": "I want you back",     "kp": "1-1", "gp": "56" },
+        { "title": "Kiss",                "kp": "1-4", "gp": "57" },
+        { "title": "Let me love you",     "kp": "2-1", "gp": "57" },
+        { "title": "Lost in Music",       "kp": "1-1", "gp": "56" },
+        { "title": "Love Foolosophy",     "kp": "1-1", "gp": "56", "am": "1-1", "fm": "0.0" },
+        { "title": "Man in the mirror",   "kp": "1-2", "gp": "57" },
         { "title": "Million Times",       "kp": "1-2", "gp": "68" },
-        { "title": "Mercy",               "kp": "1-4", "gp": "61", "am": "2-1", "fm": "0.3" },
-        { "title": "Rolling the deep",    "kp": "1-4", "gp": "61" },
-        { "title": "Sing it back",        "kp": "1-1", "gp": "60", "notes": "x6466x xx4446 xx646x xx877x XI" },
-        { "title": "So easy to fall",     "kp": "1-1", "gp": "60" },
-        { "title": "Stuck in the middle", "kp": "1-4", "gp": "60" },
-        { "title": "Sweet 7 Nation",      "kp": "2-4", "gp": "60" },
-        { "title": "The Door",            "kp": "3-1", "gp": "67" },
-        { "title": "The way you make",    "kp": "1-1", "gp": "60" },
-        { "title": "Thank you next",      "kp": "1-1", "gp": "60" },
-        { "title": "Valerie",             "kp": "1-2", "gp": "60" }
+        { "title": "Mercy",               "kp": "1-4", "gp": "58", "am": "2-1", "fm": "0.3", "solo": 2 },
+        { "title": "Rolling the deep",    "kp": "1-4", "gp": "58" },
+        { "title": "Sing it back",        "kp": "1-1", "gp": "56", "notes": "x6466x xx4446 xx646x xx877x XI" },
+        { "title": "So easy to fall",     "kp": "1-1", "gp": "56" },
+        { "title": "Stuck in the middle", "kp": "1-4", "gp": "57" },
+        { "title": "Sweet 7 Nation",      "kp": "2-4", "gp": "57" },
+        { "title": "The Door",            "kp": "3-1", "gp": "67", "solo": 2 },
+        { "title": "The way you make",    "kp": "1-1", "gp": "56", "solo": 3 },
+        { "title": "Thank you next",      "kp": "1-1", "gp": "56" },
+        { "title": "Valerie",             "kp": "1-2", "gp": "56" }
       ],
       "setlists": [{
         "name": "UJ Dietikon",
@@ -360,6 +360,8 @@
           { "title": "So easy to fall" },
           { "title": "Don't know why" },
           { "title": "Kiss" },
+
+          { "title": "BREAK" },
 
           { "title": "Stuck in the middle" },
           { "title": "About Damn Time" },
@@ -532,23 +534,24 @@
       ],
       "setlists" :[
       {
-        "name": "CN Celine",
+        "name": "CN Arbon",
         "songs": [
-          { "title": "Dancing on the Ceiling" },
-          { "title": "Faith" },
-          { "title": "Shotgun" },
-          { "title": "Love Yourself" },
-          { "title": "Dock of the Bay" },
-          { "title": "Sing" },
-          { "title": "Knockin on Hvns Door" },
-          { "title": "Baby one more time" },
-          { "title": "Sweet Dreams" },
-          { "title": "Baila Morena" },
+          { "title": "Down Down" },
+          { "title": "Let me entertain you" },
+          { "title": "Shutup and Dance" },
+          { "title": "Fly Away" },
+          { "title": "This Love" },
+          { "title": "Shake it off" },
+          { "title": "Are you gbm girl" },
           { "title": "Ob-La-Di" },
-          { "title": "W. Nuss" },
-          { "title": "Highway to hell" },
-          { "title": "Whats Up (SLOW)" },
-          { "title": "Angels" }
+          { "title": "Baila Morena" },
+          { "title": "Dancing on the Ceiling" },
+          { "title": "99 Luftballons" },          
+          { "title": "Rocking all over" },
+          { "title": "I love Rock N Roll" },
+          { "title": "Tage wie diese" },
+          { "title": "Whats Up (FAST)" },
+          { "title": "W. Nuss" }
         ]
       },
       {

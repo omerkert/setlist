@@ -29,6 +29,8 @@ const setlist = model.getSetlist(0);
 const soloPresetForGp = setlist.getSoloPresetForDevice(model.findDeviceById('gp'), model);
 assert.strictEqual(soloPresetForGp.label, 'GP preset');
 assert.strictEqual(soloPresetForGp.pgm, '2-4');
+assert.strictEqual(model.getSoloPgmForDevice(), '2-4');
+assert.strictEqual(setlist.getSoloPgmForDevice(model.getCurrentDevice(), model), '2-4');
 
 // Test undefined solo-pgm validation warning
 const invalidSoloModel = new Setlists({

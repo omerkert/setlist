@@ -122,6 +122,7 @@
       if (midiCtrl) {
         midiCtrl.refreshMidiOut();
       }
+      updateSoloButtonLabel();
 
       //changeDisplayMode(MODE_BANK);
 
@@ -159,6 +160,7 @@
 
     els.setlistMenuBtn.textContent = currentSetlist.name.substring(0, 10);
     els.setlistMenuBtn.title = currentSetlist.name;
+    updateSoloButtonLabel();
   }
 
   function closeSetlistMenu() {
@@ -429,6 +431,7 @@
 
     const activeDevice = presetsAndSetlists.updateActiveMidiOutputDevice(outputs);
     if (!activeDevice) {
+      updateSoloButtonLabel();
       return null;
     }
 
@@ -436,6 +439,7 @@
     if (currentSong) {
       switchToSong(currentSong);
     }
+    updateSoloButtonLabel();
     if (currentDisplayMode === MODE_SETLIST) {
       renderSongs();
     } else if (currentDisplayMode === MODE_BANKS) {
@@ -454,6 +458,7 @@
     currentSong = song;
     highlightSong();
     setNotes(song);
+    updateSoloButtonLabel();
     const preset = getPresetForSong(song);
     log(`switchToSong - song=${song ? song.title : 'null'}, preset=${preset}`);
     if (preset) {
@@ -813,6 +818,28 @@
     if( currentSong && currentSong.next ) switchToSong(currentSong.next);
   }
 
+  function getSoloPresetPgm() {
+    const currentDevice = presetsAndSetlists && presetsAndSetlists.getCurrentDevice ? presetsAndSetlists.getCurrentDevice() : null;
+    if (!currentDevice) return '';
+
+    if (currentSetlist && typeof currentSetlist.getSoloPgmForDevice === 'function') {
+      const pgm = currentSetlist.getSoloPgmForDevice(currentDevice, presetsAndSetlists, currentSong);
+      if (pgm) return pgm;
+    }
+
+    if (typeof currentDevice.getSoloPgm === 'function') {
+      return currentDevice.getSoloPgm(currentSong) || '';
+    }
+
+    return currentDevice.soloPresetPgm || '';
+  }
+
+  function updateSoloButtonLabel() {
+    if (!els.soloToggle) return;
+    const soloPgm = getSoloPresetPgm();
+    els.soloToggle.textContent = soloPgm ? `SOLO ${soloPgm}` : 'SOLO';
+  }
+
   els.soloToggle.addEventListener('click', () => {
     toggleSolo();
   });    
@@ -826,7 +853,8 @@
 
   function toggleSolo() {
     const currentDevice = presetsAndSetlists ? presetsAndSetlists.getCurrentDevice() : null;
-    log("Toggling SOLO, currentPreset=", currentPreset ? currentPreset.pgm : 'none', "solo-pgm=", currentDevice ? currentDevice.soloPresetPgm : 'none', ", displayModeBeforeSolo=", displayModeBeforeSolo);
+    const currentSoloPgm = currentDevice && currentDevice.getSoloPgm ? currentDevice.getSoloPgm(currentSong) : (currentDevice ? currentDevice.soloPresetPgm : 'none');
+    log("Toggling SOLO, currentPreset=", currentPreset ? currentPreset.pgm : 'none', "solo-pgm=", currentSoloPgm, ", displayModeBeforeSolo=", displayModeBeforeSolo);
     let isSoloSelected = displayModeBeforeSolo!==null;
     if(isSoloSelected) {
       // switch back to the mode that was selected when SOLO was pressed
@@ -843,11 +871,12 @@
 
       els.soloToggle.classList.remove('active', 'just-toggled', 'error');
       els.soloToggle.setAttribute('aria-pressed', 'false');
+      updateSoloButtonLabel();
 
     } else {
-      const soloPreset = currentSetlist ? currentSetlist.getSoloPresetForDevice(currentDevice, presetsAndSetlists) : null;
+      const soloPreset = currentSetlist ? currentSetlist.getSoloPresetForDevice(currentDevice, presetsAndSetlists, currentSong) : null;
       if (!soloPreset) {
-        const soloPgm = currentDevice && currentDevice.soloPresetPgm ? currentDevice.soloPresetPgm : '';
+        const soloPgm = currentDevice && currentDevice.getSoloPgm ? currentDevice.getSoloPgm(currentSong) : (currentDevice && currentDevice.soloPresetPgm ? currentDevice.soloPresetPgm : '');
         const devName = currentDevice ? currentDevice.name : 'Unknown';
         const devId = currentDevice ? currentDevice.id : 'unknown';
         console.warn(`[Setlist.js] Cannot toggle SOLO: solo-pgm "${soloPgm}" is not defined in presets for device "${devName}" (id=${devId})`);
@@ -877,6 +906,7 @@
       void els.soloToggle.offsetWidth; // reflow to restart animation
       els.soloToggle.classList.add('just-toggled');
       els.soloToggle.setAttribute('aria-pressed', 'true');
+      updateSoloButtonLabel();
     }
   }
 
